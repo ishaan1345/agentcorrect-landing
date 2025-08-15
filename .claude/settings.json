@@ -1,0 +1,80 @@
+{
+  "permissions": {
+    "allow": [
+      "Read",
+      "Write",
+      "Edit",
+      "MultiEdit",
+      "Bash(npm:*)",
+      "Bash(git:*)",
+      "Bash(node:*)",
+      "Bash(python:*)",
+      "Bash(mkdir:*)",
+      "Bash(touch:*)",
+      "Bash(ls:*)",
+      "Bash(cat:*)",
+      "Bash(echo:*)",
+      "Bash(test:*)",
+      "WebSearch",
+      "WebFetch"
+    ],
+    "deny": ["Read(.env)", "Read(secrets/**)", "Bash(rm -rf /*)"]
+  },
+  "env": {
+    "CLAUDE_CODE_MAX_OUTPUT_TOKENS": "600",
+    "DISABLE_NON_ESSENTIAL_MODEL_CALLS": "1"
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "DISABLED_Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 .claude/hooks/pre-edit-validation.py"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "DISABLED_Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo 'Linter hook temporarily disabled during migration'"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo \"$(date): $CLAUDE_TOOL_INPUT\" >> .claude/command-history.log"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 .claude/hooks/prompt-enhancement.py"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 .claude/hooks/session-summary.py"
+          }
+        ]
+      }
+    ]
+  }
+}

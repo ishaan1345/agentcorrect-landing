@@ -1,0 +1,30 @@
+{
+  "name": "VISIBILITYAGENT Safe Dev",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:18",
+  "features": {
+    "ghcr.io/devcontainers/features/git:1": {},
+    "ghcr.io/devcontainers/features/github-cli:1": {},
+    "ghcr.io/devcontainers/features/python:1": {
+      "version": "3.10"
+    }
+  },
+  "postCreateCommand": "npm install -g @anthropic-ai/claude-code && echo 'export ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}' >> ~/.bashrc",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode"
+      ]
+    }
+  },
+  "forwardPorts": [3000, 8080],
+  "remoteEnv": {
+    "ANTHROPIC_API_KEY": "${localEnv:ANTHROPIC_API_KEY}"
+  },
+  "mounts": [
+    "source=${localWorkspaceFolder}/.claude,target=/workspace/.claude,type=bind"
+  ],
+  "containerEnv": {
+    "NODE_ENV": "development"
+  }
+}
