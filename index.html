@@ -3,563 +3,751 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AgentCorrect - CI/CD Guardrails for AI Agents</title>
-    <meta name="description" content="Stop AI agents from breaking production. Catches missing payment idempotency, SQL disasters, and infrastructure wipes before deployment.">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <title>AgentCorrect - Block agent disasters before deploy</title>
+    <meta name="description" content="Deterministic CI guardrails that fail the build when your agent would duplicate charges, wipe data, or nuke caches. Exit code 2 blocks bad deploys.">
+    
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'dark-bg': '#0B0F19',
+                        'dark-surface': '#0F172A',
+                        'cyan-accent': '#22D3EE',
+                        'cyan-hover': '#06B6D4',
+                    }
+                }
+            }
+        }
+    </script>
+    
     <style>
-        * { font-family: 'Inter', system-ui, -apple-system, sans-serif; }
-        @keyframes float { 
-            0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-20px); }
+        * { 
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         }
-        .float-animation { animation: float 6s ease-in-out infinite; }
-        @keyframes pulse-glow {
-            0%, 100% { box-shadow: 0 0 20px rgba(239, 68, 68, 0.5); }
-            50% { box-shadow: 0 0 40px rgba(239, 68, 68, 0.8); }
+        code, pre {
+            font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
         }
-        .pulse-glow { animation: pulse-glow 2s ease-in-out infinite; }
-        .gradient-text {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
         }
-        .hero-gradient {
-            background: radial-gradient(ellipse at top, #1e1b4b 0%, #0f172a 50%);
+        .copy-button {
+            transition: all 150ms ease-out;
         }
-        .card-hover {
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        .copy-button:hover {
+            transform: translateY(-1px);
         }
-        .card-hover:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+        .copy-button:active {
+            transform: translateY(0);
         }
-        .code-block {
-            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+        .toast {
+            animation: slide-up 250ms ease-out;
         }
-        .success-check {
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        @keyframes slide-up {
+            from {
+                transform: translateY(10px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
         }
     </style>
+    
+    <!-- Schema.org JSON-LD -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "AgentCorrect",
+        "applicationCategory": "DeveloperTools",
+        "operatingSystem": "Linux, macOS, Windows",
+        "description": "CI/CD guardrails for AI agents. Catches payment idempotency issues, SQL disasters, and infrastructure wipes.",
+        "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD"
+        }
+    }
+    </script>
 </head>
-<body class="bg-slate-50">
-    <!-- Navigation -->
-    <nav class="fixed w-full top-0 z-50 bg-white/80 backdrop-blur-lg border-b border-gray-200">
+<body class="bg-dark-bg text-gray-300">
+    <!-- Toast Container -->
+    <div id="toast-container" class="fixed top-4 right-4 z-50"></div>
+    
+    <!-- Navbar -->
+    <nav class="fixed top-0 w-full bg-dark-bg/90 backdrop-blur-sm border-b border-gray-800 z-40">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center h-16">
-                <div class="flex items-center">
-                    <svg class="w-8 h-8 mr-3" viewBox="0 0 40 40" fill="none">
-                        <rect width="40" height="40" rx="8" fill="url(#logo-gradient)"/>
-                        <path d="M12 20L18 26L28 16" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-                        <defs>
-                            <linearGradient id="logo-gradient" x1="0" y1="0" x2="40" y2="40">
-                                <stop stop-color="#ef4444"/>
-                                <stop offset="1" stop-color="#dc2626"/>
-                            </linearGradient>
-                        </defs>
-                    </svg>
-                    <span class="text-xl font-bold text-gray-900">AgentCorrect</span>
+            <div class="flex justify-between items-center h-14">
+                <div class="flex items-center gap-8">
+                    <div class="flex items-center gap-2">
+                        <svg class="w-6 h-6 text-cyan-accent" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5z"/>
+                        </svg>
+                        <span class="font-bold text-white">AgentCorrect</span>
+                    </div>
+                    <div class="hidden md:flex items-center gap-6">
+                        <a href="#docs" class="text-gray-400 hover:text-white transition-colors">Docs</a>
+                        <a href="https://github.com/ishaan1345/agentcorrect" class="text-gray-400 hover:text-white transition-colors">GitHub</a>
+                        <a href="#pricing" class="text-gray-400 hover:text-white transition-colors">Pricing</a>
+                    </div>
                 </div>
-                <div class="hidden md:flex items-center space-x-8">
-                    <a href="#features" class="text-gray-700 hover:text-gray-900 font-medium transition">Features</a>
-                    <a href="#how-it-works" class="text-gray-700 hover:text-gray-900 font-medium transition">How it Works</a>
-                    <a href="#pricing" class="text-gray-700 hover:text-gray-900 font-medium transition">Pricing</a>
-                    <a href="https://github.com/ishaan1345/agentcorrect" class="text-gray-700 hover:text-gray-900 font-medium transition">GitHub</a>
-                    <a href="#quickstart" class="px-4 py-2 bg-gradient-to-r from-red-600 to-red-700 text-white font-semibold rounded-lg hover:from-red-700 hover:to-red-800 transition shadow-lg shadow-red-600/25">
-                        Get Started
-                    </a>
-                </div>
+                <button onclick="copyGitHubAction()" class="copy-button px-4 py-1.5 bg-cyan-accent text-dark-bg font-medium rounded hover:bg-cyan-hover">
+                    Copy CI step
+                </button>
             </div>
         </div>
     </nav>
-
+    
     <!-- Hero Section -->
-    <section class="hero-gradient text-white pt-32 pb-20 px-4">
-        <div class="max-w-7xl mx-auto">
-            <div class="text-center">
-                <!-- Alert Badge -->
-                <div class="inline-flex items-center gap-2 bg-red-500/10 border border-red-500/30 rounded-full px-4 py-2 mb-8">
-                    <span class="relative flex h-2 w-2">
-                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                        <span class="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
-                    </span>
-                    <span class="text-sm font-medium">Preventing 10,000+ production disasters daily</span>
+    <section class="pt-24 pb-16 px-4">
+        <div class="max-w-4xl mx-auto">
+            <h1 class="text-4xl sm:text-5xl font-bold text-white mb-4">
+                Block agent disasters before deploy.
+            </h1>
+            <p class="text-lg text-gray-400 mb-8">
+                Deterministic CI guardrails that fail the build when your agent would duplicate charges, wipe data, or nuke caches.
+            </p>
+            
+            <!-- CTA Buttons -->
+            <div class="flex flex-col sm:flex-row gap-4 mb-8">
+                <button onclick="copyGitHubAction()" class="copy-button px-6 py-3 bg-cyan-accent text-dark-bg font-bold rounded hover:bg-cyan-hover">
+                    Copy CI step
+                </button>
+                <button onclick="openDemo()" class="px-6 py-3 border border-gray-700 text-gray-300 font-bold rounded hover:bg-dark-surface">
+                    Try demo on sample traces
+                </button>
+            </div>
+            
+            <!-- Trust Badges -->
+            <div class="flex flex-wrap gap-4 mb-8">
+                <div class="flex items-center gap-2 px-3 py-1 bg-dark-surface rounded-full border border-gray-800">
+                    <svg class="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                    </svg>
+                    <span class="text-sm">Local & offline</span>
+                </div>
+                <div class="flex items-center gap-2 px-3 py-1 bg-dark-surface rounded-full border border-gray-800">
+                    <svg class="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                    </svg>
+                    <span class="text-sm">Deterministic</span>
+                </div>
+                <div class="flex items-center gap-2 px-3 py-1 bg-dark-surface rounded-full border border-gray-800">
+                    <span class="text-sm font-mono text-red-400">Exit 2</span>
+                    <span class="text-sm">= Build blocked</span>
+                </div>
+            </div>
+            
+            <!-- Sample Finding -->
+            <div class="bg-dark-surface rounded-lg border border-gray-800 p-4 font-mono text-sm">
+                <div class="text-red-400 mb-2">❌ Sev-0  Missing payment idempotency</div>
+                <div class="text-gray-400 ml-6 space-y-1">
+                    <div>POST https://api.stripe.com/v1/charges</div>
+                    <div class="text-yellow-400">Why: Stripe relies on Idempotency-Key to prevent duplicate charges.</div>
+                    <div class="text-green-400">Fix: Add header `Idempotency-Key: &lt;uuid-v4&gt;`</div>
+                    <div class="text-blue-400">Docs → <a href="https://docs.stripe.com/api/idempotent_requests" class="underline">https://docs.stripe.com/api/idempotent_requests</a></div>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- How It Works -->
+    <section class="py-16 px-4 bg-dark-surface">
+        <div class="max-w-4xl mx-auto">
+            <h2 class="text-2xl font-bold text-white mb-8">How it works</h2>
+            
+            <div class="grid md:grid-cols-3 gap-6">
+                <div class="space-y-2">
+                    <div class="text-cyan-accent font-bold">1. Run agent tests</div>
+                    <p class="text-sm text-gray-400">Your CI runs agent tests that generate traces.jsonl</p>
+                </div>
+                <div class="space-y-2">
+                    <div class="text-cyan-accent font-bold">2. Analyze locally</div>
+                    <p class="text-sm text-gray-400">AgentCorrect checks traces offline, no network needed</p>
+                </div>
+                <div class="space-y-2">
+                    <div class="text-cyan-accent font-bold">3. Block bad deploys</div>
+                    <p class="text-sm text-gray-400">Exit code 2 fails the build, production stays safe</p>
+                </div>
+            </div>
+            
+            <!-- GitHub Actions Example -->
+            <div class="mt-8 space-y-2">
+                <div class="flex items-center justify-between">
+                    <span class="text-sm text-gray-400">GitHub Actions</span>
+                    <button onclick="copyGitHubAction()" class="copy-button text-xs px-2 py-1 bg-dark-bg border border-gray-700 rounded hover:bg-gray-800">
+                        Copy
+                    </button>
+                </div>
+                <pre class="bg-dark-bg rounded-lg p-4 overflow-x-auto border border-gray-800"><code class="text-sm"># .github/workflows/agentcorrect.yml
+name: AgentCorrect
+on:
+  push: { branches: [ main ] }
+  pull_request:
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: pipx install agentcorrect
+      - run: agentcorrect analyze traces.jsonl
+        # Exit 2 = Build fails</code></pre>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Detectors -->
+    <section class="py-16 px-4">
+        <div class="max-w-6xl mx-auto">
+            <h2 class="text-2xl font-bold text-white mb-8">What we catch</h2>
+            
+            <div class="grid md:grid-cols-3 gap-6">
+                <!-- Payments Card -->
+                <div class="bg-dark-surface rounded-lg border border-gray-800 p-6">
+                    <div class="text-cyan-accent font-bold mb-3">Payments</div>
+                    <div class="space-y-3">
+                        <div>
+                            <div class="text-sm font-medium text-white">Missing idempotency</div>
+                            <div class="text-xs text-gray-400 mt-1">Stripe, PayPal, Square, Adyen + 21 more</div>
+                        </div>
+                        <div class="text-xs space-y-1">
+                            <div class="text-yellow-400">Why: Retries create duplicate charges</div>
+                            <div class="text-green-400">Fix: Add provider's idempotency header</div>
+                            <div class="text-blue-400">
+                                Docs: <a href="https://stripe.com/docs/api/idempotent_requests" class="underline">Stripe</a> |
+                                <a href="https://developer.paypal.com/docs/api/reference/api-requests/#http-request-headers" class="underline">PayPal</a>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 
-                <!-- Main Headline -->
-                <h1 class="text-5xl md:text-7xl font-black mb-6 tracking-tight">
-                    Your AI just charged<br>
-                    <span class="gradient-text">a customer 5 times</span>
-                </h1>
-                
-                <p class="text-xl md:text-2xl text-gray-300 mb-8 max-w-3xl mx-auto leading-relaxed">
-                    AgentCorrect catches disasters before they hit production.<br>
-                    <span class="text-white font-semibold">Exit code 2 = Deploy blocked.</span> Sleep peacefully.
-                </p>
-
-                <!-- CTA Buttons -->
-                <div class="flex flex-col sm:flex-row gap-4 justify-center mb-12">
-                    <a href="#quickstart" class="px-8 py-4 bg-white text-gray-900 font-bold rounded-xl hover:shadow-2xl hover:shadow-white/25 transition-all transform hover:scale-105">
-                        Start Free →
-                    </a>
-                    <a href="https://github.com/ishaan1345/agentcorrect" class="px-8 py-4 bg-white/10 backdrop-blur border border-white/20 font-bold rounded-xl hover:bg-white/20 transition-all">
-                        View on GitHub
-                    </a>
+                <!-- SQL Card -->
+                <div class="bg-dark-surface rounded-lg border border-gray-800 p-6">
+                    <div class="text-cyan-accent font-bold mb-3">SQL</div>
+                    <div class="space-y-3">
+                        <div>
+                            <div class="text-sm font-medium text-white">DELETE/UPDATE without WHERE</div>
+                            <div class="text-xs text-gray-400 mt-1">Also catches tautologies like WHERE 1=1</div>
+                        </div>
+                        <div class="text-xs space-y-1">
+                            <div class="text-yellow-400">Why: Affects all rows, data loss</div>
+                            <div class="text-green-400">Fix: Add specific WHERE conditions</div>
+                            <div class="text-blue-400">
+                                Docs: <a href="https://owasp.org/www-community/attacks/SQL_Injection" class="underline">OWASP SQL</a>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-
-                <!-- Quick Install -->
-                <div class="code-block max-w-2xl mx-auto rounded-xl p-6 border border-slate-700">
-                    <div class="flex items-center justify-between mb-4">
-                        <span class="text-sm text-gray-400">Quick Install</span>
-                        <button onclick="navigator.clipboard.writeText('pip install agentcorrect')" class="text-sm text-gray-400 hover:text-white transition">
+                
+                <!-- Infrastructure Card -->
+                <div class="bg-dark-surface rounded-lg border border-gray-800 p-6">
+                    <div class="text-cyan-accent font-bold mb-3">Infrastructure</div>
+                    <div class="space-y-3">
+                        <div>
+                            <div class="text-sm font-medium text-white">Cache & DB wipes</div>
+                            <div class="text-xs text-gray-400 mt-1">Redis FLUSHALL, MongoDB drop, S3 DeleteBucket</div>
+                        </div>
+                        <div class="text-xs space-y-1">
+                            <div class="text-yellow-400">Why: Service outage, data loss</div>
+                            <div class="text-green-400">Fix: Use targeted deletes</div>
+                            <div class="text-blue-400">
+                                Docs: <a href="https://redis.io/commands/flushall/" class="underline">Redis</a> |
+                                <a href="https://docs.mongodb.com/manual/reference/method/db.dropDatabase/" class="underline">MongoDB</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Coverage Honesty -->
+    <section class="py-16 px-4 bg-dark-surface">
+        <div class="max-w-4xl mx-auto">
+            <h2 class="text-2xl font-bold text-white mb-8">Coverage transparency</h2>
+            
+            <div class="space-y-6">
+                <!-- Payments Coverage -->
+                <div>
+                    <div class="flex justify-between mb-2">
+                        <span class="text-sm text-gray-400">Payments</span>
+                        <span class="text-sm font-mono text-gray-400">42 eligible / 38 checked</span>
+                    </div>
+                    <div class="w-full bg-dark-bg rounded-full h-2 overflow-hidden">
+                        <div class="bg-cyan-accent h-full" style="width: 90.5%"></div>
+                    </div>
+                    <details class="mt-2">
+                        <summary class="text-xs text-gray-500 cursor-pointer hover:text-gray-400">4 unparseable (click to expand)</summary>
+                        <pre class="mt-2 p-2 bg-dark-bg rounded text-xs overflow-x-auto"><code>// Missing required fields:
+{"url": "api.stripe.com", "headers": null}  // headers missing
+{"method": "POST"}  // url missing</code></pre>
+                    </details>
+                </div>
+                
+                <!-- SQL Coverage -->
+                <div>
+                    <div class="flex justify-between mb-2">
+                        <span class="text-sm text-gray-400">SQL</span>
+                        <span class="text-sm font-mono text-gray-400">15 eligible / 15 checked</span>
+                    </div>
+                    <div class="w-full bg-dark-bg rounded-full h-2 overflow-hidden">
+                        <div class="bg-green-500 h-full" style="width: 100%"></div>
+                    </div>
+                </div>
+                
+                <!-- Scope Note -->
+                <div class="text-xs text-gray-500 mt-4">
+                    <p class="font-medium mb-1">Day-1 scope:</p>
+                    <ul class="space-y-0.5">
+                        <li>✓ Payment idempotency (25 providers)</li>
+                        <li>✓ SQL DELETE/UPDATE without WHERE</li>
+                        <li>✓ Redis FLUSHALL, MongoDB drops</li>
+                        <li>✗ GraphQL mutations (coming soon)</li>
+                        <li>✗ Webhook signatures (coming soon)</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Live Demo -->
+    <section id="demo" class="py-16 px-4">
+        <div class="max-w-4xl mx-auto">
+            <h2 class="text-2xl font-bold text-white mb-4">Try it (browser-only)</h2>
+            <p class="text-sm text-gray-400 mb-6">All analysis happens in your browser. Nothing leaves this page.</p>
+            
+            <div class="space-y-4">
+                <div class="flex gap-2">
+                    <button onclick="useSampleTraces()" class="px-3 py-1 bg-dark-surface border border-gray-700 rounded text-sm hover:bg-gray-800">
+                        Use sample traces
+                    </button>
+                    <button onclick="clearDemo()" class="px-3 py-1 bg-dark-surface border border-gray-700 rounded text-sm hover:bg-gray-800">
+                        Clear
+                    </button>
+                </div>
+                
+                <textarea 
+                    id="demo-input"
+                    class="w-full h-40 p-3 bg-dark-surface border border-gray-800 rounded font-mono text-xs text-gray-300 placeholder-gray-600"
+                    placeholder='Paste JSONL traces (max 200 lines)&#10;{"timestamp":"2025-01-20T10:00:00Z","role":"http","meta":{"http":{"method":"POST","url":"https://api.stripe.com/v1/charges","headers":{}}}}'
+                ></textarea>
+                
+                <button onclick="analyzeDemo()" class="px-4 py-2 bg-cyan-accent text-dark-bg font-bold rounded hover:bg-cyan-hover">
+                    Analyze
+                </button>
+                
+                <div id="demo-results" class="hidden space-y-2"></div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Install -->
+    <section class="py-16 px-4 bg-dark-surface">
+        <div class="max-w-4xl mx-auto">
+            <h2 class="text-2xl font-bold text-white mb-8">Install</h2>
+            
+            <div class="space-y-4">
+                <!-- Tab buttons -->
+                <div class="flex gap-2">
+                    <button onclick="showInstallTab('pip')" class="install-tab px-3 py-1 bg-dark-bg border border-gray-700 rounded text-sm" data-tab="pip">pip</button>
+                    <button onclick="showInstallTab('pipx')" class="install-tab px-3 py-1 bg-dark-surface border border-gray-700 rounded text-sm" data-tab="pipx">pipx</button>
+                </div>
+                
+                <!-- Tab content -->
+                <div id="install-pip" class="install-content">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-sm text-gray-400">Install with pip</span>
+                        <button onclick="copyCommand('pip install agentcorrect')" class="copy-button text-xs px-2 py-1 bg-dark-bg border border-gray-700 rounded hover:bg-gray-800">
                             Copy
                         </button>
                     </div>
-                    <code class="text-green-400 font-mono">
-                        $ pip install agentcorrect<br>
-                        $ agentcorrect demo --scenario all<br>
-                        <span class="text-red-400">[BLOCKED] Stripe payment missing Idempotency-Key</span><br>
-                        <span class="text-red-400">[BLOCKED] DELETE FROM users WHERE 1=1</span><br>
-                        <span class="text-yellow-400">→ Exit code: 2 (CI/CD pipeline halted)</span>
-                    </code>
+                    <pre class="bg-dark-bg rounded-lg p-4 overflow-x-auto border border-gray-800"><code class="text-sm">pip install agentcorrect
+agentcorrect analyze traces.jsonl
+echo $?  # 2 == Sev-0 found</code></pre>
+                </div>
+                
+                <div id="install-pipx" class="install-content hidden">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-sm text-gray-400">Install with pipx (recommended)</span>
+                        <button onclick="copyCommand('pipx install agentcorrect')" class="copy-button text-xs px-2 py-1 bg-dark-bg border border-gray-700 rounded hover:bg-gray-800">
+                            Copy
+                        </button>
+                    </div>
+                    <pre class="bg-dark-bg rounded-lg p-4 overflow-x-auto border border-gray-800"><code class="text-sm">pipx install agentcorrect
+agentcorrect analyze traces.jsonl
+echo $?  # 2 == Sev-0 found</code></pre>
                 </div>
             </div>
         </div>
     </section>
-
-    <!-- Trust Indicators -->
-    <section class="py-16 bg-white border-b">
-        <div class="max-w-7xl mx-auto px-4">
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-8 items-center justify-items-center opacity-70">
-                <div class="text-center">
-                    <div class="text-3xl font-bold text-gray-900">99%</div>
-                    <div class="text-sm text-gray-600 mt-1">Detection Rate</div>
-                </div>
-                <div class="text-center">
-                    <div class="text-3xl font-bold text-gray-900">25+</div>
-                    <div class="text-sm text-gray-600 mt-1">Payment Providers</div>
-                </div>
-                <div class="text-center">
-                    <div class="text-3xl font-bold text-gray-900">0</div>
-                    <div class="text-sm text-gray-600 mt-1">False Positives</div>
-                </div>
-                <div class="text-center">
-                    <div class="text-3xl font-bold text-gray-900">&lt;100ms</div>
-                    <div class="text-sm text-gray-600 mt-1">Per Trace</div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Problem Statement -->
-    <section class="py-20 px-4">
-        <div class="max-w-7xl mx-auto">
-            <div class="text-center mb-16">
-                <h2 class="text-4xl md:text-5xl font-black text-gray-900 mb-4">
-                    AI agents are <span class="text-red-600">time bombs</span>
-                </h2>
-                <p class="text-xl text-gray-600 max-w-3xl mx-auto">
-                    One missing header. One forgotten WHERE clause. One wrong API call.<br>
-                    Your production is toast.
-                </p>
-            </div>
-
-            <div class="grid md:grid-cols-3 gap-8">
-                <!-- Disaster Card 1 -->
-                <div class="card-hover bg-white rounded-2xl p-8 border border-gray-200 relative overflow-hidden">
-                    <div class="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-red-500/10 to-transparent rounded-full -mr-16 -mt-16"></div>
-                    <div class="relative">
-                        <div class="text-4xl mb-4">💸</div>
-                        <h3 class="text-2xl font-bold text-gray-900 mb-3">Duplicate Charges</h3>
-                        <p class="text-gray-600 mb-4">AI forgets idempotency key. Customer charged 5x. Chargeback filed. Trust destroyed.</p>
-                        <div class="text-sm font-mono text-red-600 bg-red-50 rounded-lg p-3">
-                            POST /v1/charges<br>
-                            Missing: Idempotency-Key
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Disaster Card 2 -->
-                <div class="card-hover bg-white rounded-2xl p-8 border border-gray-200 relative overflow-hidden">
-                    <div class="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-orange-500/10 to-transparent rounded-full -mr-16 -mt-16"></div>
-                    <div class="relative">
-                        <div class="text-4xl mb-4">💀</div>
-                        <h3 class="text-2xl font-bold text-gray-900 mb-3">Database Wipes</h3>
-                        <p class="text-gray-600 mb-4">AI runs DELETE without WHERE. Entire users table gone. No backup recent enough.</p>
-                        <div class="text-sm font-mono text-red-600 bg-red-50 rounded-lg p-3">
-                            DELETE FROM users<br>
-                            WHERE 1=1 -- Always true
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Disaster Card 3 -->
-                <div class="card-hover bg-white rounded-2xl p-8 border border-gray-200 relative overflow-hidden">
-                    <div class="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-purple-500/10 to-transparent rounded-full -mr-16 -mt-16"></div>
-                    <div class="relative">
-                        <div class="text-4xl mb-4">🔥</div>
-                        <h3 class="text-2xl font-bold text-gray-900 mb-3">Cache Destroyed</h3>
-                        <p class="text-gray-600 mb-4">AI runs Redis FLUSHALL. Entire cache wiped. Site down. Customers angry.</p>
-                        <div class="text-sm font-mono text-red-600 bg-red-50 rounded-lg p-3">
-                            redis-cli FLUSHALL<br>
-                            # Goodbye, everything
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Features Section -->
-    <section id="features" class="py-20 px-4 bg-gradient-to-b from-gray-50 to-white">
-        <div class="max-w-7xl mx-auto">
-            <div class="text-center mb-16">
-                <h2 class="text-4xl md:text-5xl font-black text-gray-900 mb-4">
-                    Battle-tested protection
-                </h2>
-                <p class="text-xl text-gray-600 max-w-3xl mx-auto">
-                    17/17 tests passing. Zero dependencies. Pure Python deterministic checks.
-                </p>
-            </div>
-
-            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <!-- Payment Protection -->
-                <div class="bg-white rounded-xl p-6 border border-gray-200">
-                    <div class="success-check w-12 h-12 rounded-lg flex items-center justify-center text-white mb-4">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                        </svg>
-                    </div>
-                    <h3 class="text-xl font-bold text-gray-900 mb-2">Payment Idempotency</h3>
-                    <p class="text-gray-600 text-sm mb-3">Detects missing idempotency for 25+ providers</p>
-                    <ul class="space-y-1 text-sm text-gray-500">
-                        <li>• Stripe, PayPal, Square</li>
-                        <li>• Adyen, Braintree, Checkout.com</li>
-                        <li>• Mollie, Razorpay, Worldpay</li>
-                    </ul>
-                </div>
-
-                <!-- SQL Protection -->
-                <div class="bg-white rounded-xl p-6 border border-gray-200">
-                    <div class="success-check w-12 h-12 rounded-lg flex items-center justify-center text-white mb-4">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                        </svg>
-                    </div>
-                    <h3 class="text-xl font-bold text-gray-900 mb-2">SQL Disaster Prevention</h3>
-                    <p class="text-gray-600 text-sm mb-3">Catches destructive queries before execution</p>
-                    <ul class="space-y-1 text-sm text-gray-500">
-                        <li>• DELETE/UPDATE without WHERE</li>
-                        <li>• DROP TABLE, TRUNCATE</li>
-                        <li>• Tautology conditions (1=1)</li>
-                    </ul>
-                </div>
-
-                <!-- Infrastructure Protection -->
-                <div class="bg-white rounded-xl p-6 border border-gray-200">
-                    <div class="success-check w-12 h-12 rounded-lg flex items-center justify-center text-white mb-4">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                        </svg>
-                    </div>
-                    <h3 class="text-xl font-bold text-gray-900 mb-2">Infrastructure Guards</h3>
-                    <p class="text-gray-600 text-sm mb-3">Prevents catastrophic infrastructure commands</p>
-                    <ul class="space-y-1 text-sm text-gray-500">
-                        <li>• Redis FLUSHALL/FLUSHDB</li>
-                        <li>• MongoDB dropDatabase</li>
-                        <li>• S3 DeleteBucket</li>
-                    </ul>
-                </div>
-
-                <!-- Runtime Enforcement -->
-                <div class="bg-white rounded-xl p-6 border border-gray-200">
-                    <div class="success-check w-12 h-12 rounded-lg flex items-center justify-center text-white mb-4">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                        </svg>
-                    </div>
-                    <h3 class="text-xl font-bold text-gray-900 mb-2">Runtime Enforcement</h3>
-                    <p class="text-gray-600 text-sm mb-3">Auto-generates policies from violations</p>
-                    <ul class="space-y-1 text-sm text-gray-500">
-                        <li>• OPA/REGO runtime policies</li>
-                        <li>• Agent spec JSON/YAML</li>
-                        <li>• Deploy-once, protect forever</li>
-                    </ul>
-                </div>
-
-                <!-- Reporting -->
-                <div class="bg-white rounded-xl p-6 border border-gray-200">
-                    <div class="success-check w-12 h-12 rounded-lg flex items-center justify-center text-white mb-4">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                        </svg>
-                    </div>
-                    <h3 class="text-xl font-bold text-gray-900 mb-2">Rich Reporting</h3>
-                    <p class="text-gray-600 text-sm mb-3">Multiple output formats for any workflow</p>
-                    <ul class="space-y-1 text-sm text-gray-500">
-                        <li>• HTML visual reports</li>
-                        <li>• JSON for automation</li>
-                        <li>• SARIF for GitHub</li>
-                    </ul>
-                </div>
-
-                <!-- CI/CD Integration -->
-                <div class="bg-white rounded-xl p-6 border border-gray-200">
-                    <div class="success-check w-12 h-12 rounded-lg flex items-center justify-center text-white mb-4">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                        </svg>
-                    </div>
-                    <h3 class="text-xl font-bold text-gray-900 mb-2">CI/CD Native</h3>
-                    <p class="text-gray-600 text-sm mb-3">Designed for automated pipelines</p>
-                    <ul class="space-y-1 text-sm text-gray-500">
-                        <li>• Exit code 2 on violations</li>
-                        <li>• GitHub Actions ready</li>
-                        <li>• Jenkins, CircleCI, GitLab</li>
-                    </ul>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- How It Works -->
-    <section id="how-it-works" class="py-20 px-4 bg-slate-900 text-white">
-        <div class="max-w-7xl mx-auto">
-            <div class="text-center mb-16">
-                <h2 class="text-4xl md:text-5xl font-black mb-4">
-                    Dead simple integration
-                </h2>
-                <p class="text-xl text-gray-400 max-w-3xl mx-auto">
-                    Add one line to your CI/CD. Sleep better tonight.
-                </p>
-            </div>
-
-            <div class="max-w-4xl mx-auto space-y-8">
-                <!-- Step 1 -->
-                <div class="flex gap-6 items-start">
-                    <div class="flex-shrink-0">
-                        <div class="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center font-bold text-lg">
-                            1
-                        </div>
-                    </div>
-                    <div class="flex-1">
-                        <h3 class="text-2xl font-bold mb-3">Agent generates traces</h3>
-                        <p class="text-gray-400 mb-4">Your AI agent logs actions to standard JSONL format</p>
-                        <div class="code-block rounded-lg p-4 text-sm font-mono">
-                            <span class="text-gray-500"># trace.jsonl</span><br>
-                            {"timestamp": "2025-01-20T10:15:00Z", "method": "POST", "url": "https://api.stripe.com/v1/charges", "headers": {}}
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Step 2 -->
-                <div class="flex gap-6 items-start">
-                    <div class="flex-shrink-0">
-                        <div class="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center font-bold text-lg">
-                            2
-                        </div>
-                    </div>
-                    <div class="flex-1">
-                        <h3 class="text-2xl font-bold mb-3">AgentCorrect analyzes</h3>
-                        <p class="text-gray-400 mb-4">Detects violations in milliseconds</p>
-                        <div class="code-block rounded-lg p-4 text-sm font-mono">
-                            <span class="text-gray-500">$ agentcorrect analyze trace.jsonl</span><br>
-                            <span class="text-red-400">[BLOCKED] Missing Idempotency-Key header for Stripe</span><br>
-                            <span class="text-yellow-400">Generating policy.rego...</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Step 3 -->
-                <div class="flex gap-6 items-start">
-                    <div class="flex-shrink-0">
-                        <div class="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center font-bold text-lg">
-                            3
-                        </div>
-                    </div>
-                    <div class="flex-1">
-                        <h3 class="text-2xl font-bold mb-3">Pipeline blocks deploy</h3>
-                        <p class="text-gray-400 mb-4">Exit code 2 stops the disaster before production</p>
-                        <div class="code-block rounded-lg p-4 text-sm font-mono">
-                            <span class="text-gray-500"># GitHub Actions</span><br>
-                            <span class="text-red-400">✗ Check agent safety - Exit code 2</span><br>
-                            <span class="text-gray-500">Deploy cancelled. Production safe.</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Quick Start -->
-    <section id="quickstart" class="py-20 px-4">
-        <div class="max-w-7xl mx-auto">
-            <div class="text-center mb-16">
-                <h2 class="text-4xl md:text-5xl font-black text-gray-900 mb-4">
-                    Start in 60 seconds
-                </h2>
-                <p class="text-xl text-gray-600 max-w-3xl mx-auto">
-                    No signup. No API keys. No cloud service. Just safety.
-                </p>
-            </div>
-
-            <div class="max-w-3xl mx-auto space-y-6">
-                <!-- Install -->
-                <div class="bg-white rounded-xl p-6 border border-gray-200">
-                    <div class="flex items-center gap-3 mb-4">
-                        <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold">1</div>
-                        <h3 class="text-lg font-bold">Install from PyPI</h3>
-                    </div>
-                    <div class="bg-slate-900 text-gray-300 rounded-lg p-4 font-mono text-sm">
-                        pip install agentcorrect
-                    </div>
-                </div>
-
-                <!-- Test -->
-                <div class="bg-white rounded-xl p-6 border border-gray-200">
-                    <div class="flex items-center gap-3 mb-4">
-                        <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold">2</div>
-                        <h3 class="text-lg font-bold">Try the demo</h3>
-                    </div>
-                    <div class="bg-slate-900 text-gray-300 rounded-lg p-4 font-mono text-sm">
-                        agentcorrect demo --scenario all
-                    </div>
-                </div>
-
-                <!-- Add to CI -->
-                <div class="bg-white rounded-xl p-6 border border-gray-200">
-                    <div class="flex items-center gap-3 mb-4">
-                        <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold">3</div>
-                        <h3 class="text-lg font-bold">Add to your pipeline</h3>
-                    </div>
-                    <div class="bg-slate-900 text-gray-300 rounded-lg p-4 font-mono text-sm overflow-x-auto">
-                        <span class="text-gray-500"># .github/workflows/safety.yml</span><br>
-                        - name: Check AI Agent Safety<br>
-                        &nbsp;&nbsp;run: |<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;pip install agentcorrect<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;agentcorrect analyze $TRACE_FILE --out reports/<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;# Exit 2 = Pipeline stops
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
+    
     <!-- Pricing -->
-    <section id="pricing" class="py-20 px-4 bg-gradient-to-b from-white to-gray-50">
-        <div class="max-w-7xl mx-auto">
-            <div class="text-center mb-16">
-                <h2 class="text-4xl md:text-5xl font-black text-gray-900 mb-4">
-                    Free forever
-                </h2>
-                <p class="text-xl text-gray-600 max-w-3xl mx-auto">
-                    MIT licensed. No telemetry. Your data never leaves your servers.
-                </p>
-            </div>
-
-            <div class="max-w-md mx-auto">
-                <div class="bg-white rounded-2xl p-8 border-2 border-gray-900 shadow-xl">
-                    <div class="text-center mb-8">
-                        <div class="text-5xl font-black text-gray-900 mb-2">$0</div>
-                        <div class="text-gray-600">Forever</div>
-                    </div>
-                    <ul class="space-y-4 mb-8">
-                        <li class="flex items-start gap-3">
-                            <svg class="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+    <section id="pricing" class="py-16 px-4">
+        <div class="max-w-5xl mx-auto">
+            <h2 class="text-2xl font-bold text-white mb-8 text-center">Pricing</h2>
+            
+            <div class="grid md:grid-cols-3 gap-6">
+                <!-- Free -->
+                <div class="bg-dark-surface rounded-lg border border-gray-800 p-6">
+                    <div class="text-lg font-bold text-white mb-2">Free</div>
+                    <div class="text-3xl font-bold text-white mb-4">$0</div>
+                    <div class="text-sm text-gray-400 mb-6">CLI, core rules, local analysis</div>
+                    <ul class="space-y-2 text-sm text-gray-400">
+                        <li class="flex items-start gap-2">
+                            <svg class="w-4 h-4 text-green-500 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
                             </svg>
-                            <span class="text-gray-700">Unlimited traces analyzed</span>
+                            <span>25+ payment providers</span>
                         </li>
-                        <li class="flex items-start gap-3">
-                            <svg class="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        <li class="flex items-start gap-2">
+                            <svg class="w-4 h-4 text-green-500 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
                             </svg>
-                            <span class="text-gray-700">All 25+ payment providers</span>
+                            <span>SQL & infra checks</span>
                         </li>
-                        <li class="flex items-start gap-3">
-                            <svg class="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        <li class="flex items-start gap-2">
+                            <svg class="w-4 h-4 text-green-500 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
                             </svg>
-                            <span class="text-gray-700">OPA/REGO runtime policies</span>
-                        </li>
-                        <li class="flex items-start gap-3">
-                            <svg class="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                            </svg>
-                            <span class="text-gray-700">All output formats</span>
-                        </li>
-                        <li class="flex items-start gap-3">
-                            <svg class="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                            </svg>
-                            <span class="text-gray-700">No telemetry or phone-home</span>
+                            <span>OPA/REGO policies</span>
                         </li>
                     </ul>
-                    <a href="https://github.com/ishaan1345/agentcorrect" class="block w-full text-center px-6 py-3 bg-gray-900 text-white font-bold rounded-lg hover:bg-gray-800 transition">
-                        Get Started on GitHub →
-                    </a>
+                    <div class="mt-6 text-xs text-gray-500">No credit card required</div>
+                </div>
+                
+                <!-- Pro -->
+                <div class="bg-dark-surface rounded-lg border border-cyan-accent p-6">
+                    <div class="text-lg font-bold text-white mb-2">Pro</div>
+                    <div class="text-3xl font-bold text-white mb-4">$49<span class="text-sm text-gray-400">/month</span></div>
+                    <div class="text-sm text-gray-400 mb-6">Additional providers & rules</div>
+                    <ul class="space-y-2 text-sm text-gray-400">
+                        <li class="flex items-start gap-2">
+                            <svg class="w-4 h-4 text-green-500 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                            </svg>
+                            <span>Everything in Free</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <svg class="w-4 h-4 text-green-500 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                            </svg>
+                            <span>GraphQL mutations</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <svg class="w-4 h-4 text-green-500 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                            </svg>
+                            <span>HTML reports</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <svg class="w-4 h-4 text-green-500 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                            </svg>
+                            <span>Email support</span>
+                        </li>
+                    </ul>
+                </div>
+                
+                <!-- Enterprise -->
+                <div class="bg-dark-surface rounded-lg border border-gray-800 p-6">
+                    <div class="text-lg font-bold text-white mb-2">Enterprise</div>
+                    <div class="text-3xl font-bold text-white mb-4">Custom</div>
+                    <div class="text-sm text-gray-400 mb-6">Custom rules, SSO, SLAs</div>
+                    <ul class="space-y-2 text-sm text-gray-400">
+                        <li class="flex items-start gap-2">
+                            <svg class="w-4 h-4 text-green-500 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                            </svg>
+                            <span>Everything in Pro</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <svg class="w-4 h-4 text-green-500 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                            </svg>
+                            <span>Custom rules</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <svg class="w-4 h-4 text-green-500 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                            </svg>
+                            <span>SAML/SSO</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <svg class="w-4 h-4 text-green-500 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                            </svg>
+                            <span>SOC2 mapping</span>
+                        </li>
+                    </ul>
+                    <button class="mt-6 w-full px-4 py-2 bg-dark-bg border border-gray-700 rounded text-sm hover:bg-gray-800">
+                        Contact sales
+                    </button>
                 </div>
             </div>
         </div>
     </section>
-
-    <!-- Final CTA -->
-    <section class="py-20 px-4 bg-gradient-to-r from-red-600 to-red-700 text-white">
-        <div class="max-w-4xl mx-auto text-center">
-            <h2 class="text-4xl md:text-5xl font-black mb-6">
-                Stop disasters. Start sleeping.
-            </h2>
-            <p class="text-xl mb-8 text-red-100">
-                Join thousands of teams protecting production from AI agents.
-            </p>
-            <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                <a href="https://pypi.org/project/agentcorrect" class="px-8 py-4 bg-white text-red-700 font-bold rounded-xl hover:shadow-2xl hover:shadow-white/25 transition-all transform hover:scale-105">
-                    pip install agentcorrect
-                </a>
-                <a href="https://github.com/ishaan1345/agentcorrect" class="px-8 py-4 bg-white/10 backdrop-blur border border-white/20 font-bold rounded-xl hover:bg-white/20 transition-all">
-                    Star on GitHub ⭐
-                </a>
-            </div>
-        </div>
-    </section>
-
+    
     <!-- Footer -->
-    <footer class="py-12 px-4 bg-slate-900 text-gray-400">
-        <div class="max-w-7xl mx-auto">
-            <div class="flex flex-col md:flex-row justify-between items-center">
-                <div class="flex items-center mb-4 md:mb-0">
-                    <svg class="w-6 h-6 mr-2" viewBox="0 0 40 40" fill="none">
-                        <rect width="40" height="40" rx="8" fill="white" opacity="0.1"/>
-                        <path d="M12 20L18 26L28 16" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
-                    <span class="font-semibold text-white">AgentCorrect</span>
+    <footer class="py-12 px-4 bg-dark-surface border-t border-gray-800">
+        <div class="max-w-6xl mx-auto">
+            <div class="grid md:grid-cols-4 gap-8">
+                <div>
+                    <div class="flex items-center gap-2 mb-4">
+                        <svg class="w-5 h-5 text-cyan-accent" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5z"/>
+                        </svg>
+                        <span class="font-bold text-white">AgentCorrect</span>
+                    </div>
+                    <p class="text-xs text-gray-400">Block agent disasters before deploy</p>
                 </div>
-                <div class="flex gap-6 text-sm">
-                    <a href="https://github.com/ishaan1345/agentcorrect" class="hover:text-white transition">GitHub</a>
-                    <a href="https://pypi.org/project/agentcorrect" class="hover:text-white transition">PyPI</a>
-                    <a href="https://github.com/ishaan1345/agentcorrect/issues" class="hover:text-white transition">Issues</a>
-                    <a href="https://github.com/ishaan1345/agentcorrect/blob/main/LICENSE" class="hover:text-white transition">MIT License</a>
+                
+                <div>
+                    <h3 class="text-sm font-medium text-white mb-3">Resources</h3>
+                    <ul class="space-y-2 text-xs text-gray-400">
+                        <li><a href="#docs" class="hover:text-white">Documentation</a></li>
+                        <li><a href="https://github.com/ishaan1345/agentcorrect/blob/main/CHANGELOG.md" class="hover:text-white">Changelog</a></li>
+                        <li><a href="https://github.com/ishaan1345/agentcorrect" class="hover:text-white">GitHub</a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h3 class="text-sm font-medium text-white mb-3">Legal</h3>
+                    <ul class="space-y-2 text-xs text-gray-400">
+                        <li><a href="#privacy" class="hover:text-white">Privacy</a></li>
+                        <li><a href="#security" class="hover:text-white">Security</a></li>
+                        <li><a href="https://github.com/ishaan1345/agentcorrect/blob/main/LICENSE" class="hover:text-white">MIT License</a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h3 class="text-sm font-medium text-white mb-3">Stay updated</h3>
+                    <form class="flex gap-2">
+                        <input type="email" placeholder="you@example.com" class="flex-1 px-3 py-1 bg-dark-bg border border-gray-700 rounded text-sm placeholder-gray-600 focus:outline-none focus:border-cyan-accent">
+                        <button type="submit" class="px-3 py-1 bg-cyan-accent text-dark-bg font-medium rounded text-sm hover:bg-cyan-hover">
+                            Subscribe
+                        </button>
+                    </form>
+                    <p class="text-xs text-gray-500 mt-2">No spam. Unsubscribe anytime.</p>
                 </div>
             </div>
-            <div class="mt-8 pt-8 border-t border-gray-800 text-center text-sm">
-                <p>© 2025 AgentCorrect. Built to prevent disasters.</p>
+            
+            <div class="mt-8 pt-8 border-t border-gray-800 text-center text-xs text-gray-500">
+                © 2025 AgentCorrect. Built to prevent disasters.
             </div>
         </div>
     </footer>
-
+    
+    <!-- Sticky Bottom Bar (appears after scroll) -->
+    <div id="sticky-bar" class="fixed bottom-0 left-0 right-0 bg-dark-bg/95 backdrop-blur-sm border-t border-gray-800 py-3 px-4 hidden">
+        <div class="max-w-4xl mx-auto flex items-center justify-between">
+            <span class="text-sm text-gray-400">Ready to block disasters?</span>
+            <div class="flex gap-3">
+                <button onclick="copyCommand('pipx install agentcorrect')" class="copy-button px-3 py-1 bg-dark-surface border border-gray-700 rounded text-sm hover:bg-gray-800">
+                    Install
+                </button>
+                <button onclick="copyGitHubAction()" class="copy-button px-3 py-1 bg-cyan-accent text-dark-bg font-medium rounded text-sm hover:bg-cyan-hover">
+                    Copy CI step
+                </button>
+                <button onclick="openDemo()" class="px-3 py-1 border border-gray-700 rounded text-sm hover:bg-dark-surface">
+                    Try demo
+                </button>
+            </div>
+        </div>
+    </div>
+    
     <script>
-        // Smooth scrolling for anchor links
-        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function (e) {
-                e.preventDefault();
-                document.querySelector(this.getAttribute('href')).scrollIntoView({
-                    behavior: 'smooth'
-                });
+        // GitHub Actions YAML
+        const githubActionYaml = `# .github/workflows/agentcorrect.yml
+name: AgentCorrect
+on:
+  push: { branches: [ main ] }
+  pull_request:
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: pipx install agentcorrect
+      - run: agentcorrect analyze traces.jsonl`;
+
+        // Sample traces for demo
+        const sampleTraces = `{"timestamp":"2025-01-20T10:00:00Z","role":"http","meta":{"http":{"method":"POST","url":"https://api.stripe.com/v1/charges","headers":{}}}}
+{"timestamp":"2025-01-20T10:01:00Z","role":"sql","meta":{"sql":{"query":"DELETE FROM users WHERE 1=1"}}}
+{"timestamp":"2025-01-20T10:02:00Z","role":"redis","meta":{"redis":{"command":"FLUSHALL"}}}`;
+
+        // Copy functions
+        async function copyToClipboard(text, buttonElement = null) {
+            try {
+                await navigator.clipboard.writeText(text);
+                showToast('Copied ✓');
+                
+                if (buttonElement) {
+                    const originalText = buttonElement.textContent;
+                    buttonElement.textContent = 'Copied ✓';
+                    setTimeout(() => {
+                        buttonElement.textContent = originalText;
+                    }, 2000);
+                }
+            } catch (err) {
+                showToast('Copy failed', 'error');
+            }
+        }
+
+        function copyGitHubAction() {
+            copyToClipboard(githubActionYaml);
+        }
+
+        function copyCommand(command) {
+            copyToClipboard(command);
+        }
+
+        // Toast notifications
+        function showToast(message, type = 'success') {
+            const toast = document.createElement('div');
+            toast.className = `toast px-4 py-2 rounded ${type === 'success' ? 'bg-green-500' : 'bg-red-500'} text-white text-sm font-medium`;
+            toast.textContent = message;
+            
+            const container = document.getElementById('toast-container');
+            container.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.remove();
+            }, 3000);
+        }
+
+        // Demo functions
+        function openDemo() {
+            document.getElementById('demo').scrollIntoView({ behavior: 'smooth' });
+            useSampleTraces();
+        }
+
+        function useSampleTraces() {
+            document.getElementById('demo-input').value = sampleTraces;
+        }
+
+        function clearDemo() {
+            document.getElementById('demo-input').value = '';
+            document.getElementById('demo-results').classList.add('hidden');
+        }
+
+        function analyzeDemo() {
+            const input = document.getElementById('demo-input').value;
+            if (!input.trim()) {
+                showToast('Please enter some traces', 'error');
+                return;
+            }
+
+            const results = document.getElementById('demo-results');
+            results.innerHTML = '';
+            results.classList.remove('hidden');
+
+            let exitCode = 0;
+            const lines = input.trim().split('\n').slice(0, 200); // Max 200 lines
+            
+            lines.forEach(line => {
+                try {
+                    const trace = JSON.parse(line);
+                    
+                    // Check for payment idempotency
+                    if (trace.role === 'http' && trace.meta?.http?.url?.includes('stripe.com')) {
+                        if (!trace.meta.http.headers?.['Idempotency-Key']) {
+                            exitCode = 2;
+                            results.innerHTML += `
+                                <div class="bg-dark-surface rounded p-3 border border-red-500/50">
+                                    <div class="text-red-400 font-bold text-sm mb-1">❌ Sev-0: Missing payment idempotency</div>
+                                    <div class="text-xs text-gray-400 space-y-0.5 ml-6">
+                                        <div>POST ${trace.meta.http.url}</div>
+                                        <div class="text-yellow-400">Why: Stripe requires Idempotency-Key</div>
+                                        <div class="text-green-400">Fix: Add header 'Idempotency-Key: &lt;uuid&gt;'</div>
+                                    </div>
+                                </div>
+                            `;
+                        }
+                    }
+                    
+                    // Check for SQL disasters
+                    if (trace.role === 'sql' && trace.meta?.sql?.query) {
+                        const query = trace.meta.sql.query.toUpperCase();
+                        if ((query.includes('DELETE') && !query.includes('WHERE')) || query.includes('WHERE 1=1')) {
+                            exitCode = 2;
+                            results.innerHTML += `
+                                <div class="bg-dark-surface rounded p-3 border border-red-500/50">
+                                    <div class="text-red-400 font-bold text-sm mb-1">❌ Sev-0: Dangerous SQL operation</div>
+                                    <div class="text-xs text-gray-400 space-y-0.5 ml-6">
+                                        <div>${trace.meta.sql.query}</div>
+                                        <div class="text-yellow-400">Why: Affects all rows</div>
+                                        <div class="text-green-400">Fix: Add specific WHERE conditions</div>
+                                    </div>
+                                </div>
+                            `;
+                        }
+                    }
+                    
+                    // Check for Redis FLUSHALL
+                    if (trace.role === 'redis' && trace.meta?.redis?.command?.toUpperCase().includes('FLUSHALL')) {
+                        exitCode = 2;
+                        results.innerHTML += `
+                            <div class="bg-dark-surface rounded p-3 border border-red-500/50">
+                                <div class="text-red-400 font-bold text-sm mb-1">❌ Sev-0: Redis cache wipe</div>
+                                <div class="text-xs text-gray-400 space-y-0.5 ml-6">
+                                    <div>Command: ${trace.meta.redis.command}</div>
+                                    <div class="text-yellow-400">Why: Deletes all keys</div>
+                                    <div class="text-green-400">Fix: Use targeted DEL</div>
+                                </div>
+                            </div>
+                        `;
+                    }
+                } catch (e) {
+                    // Invalid JSON line, skip
+                }
             });
+
+            // Add exit code
+            results.innerHTML += `
+                <div class="mt-4 p-3 bg-dark-surface rounded border ${exitCode === 0 ? 'border-green-500/50' : 'border-red-500/50'}">
+                    <div class="font-mono text-sm ${exitCode === 0 ? 'text-green-400' : 'text-red-400'}">
+                        Exit code: ${exitCode} ${exitCode === 0 ? '✓ Clean' : '✗ Build would fail'}
+                    </div>
+                </div>
+            `;
+        }
+
+        // Install tabs
+        function showInstallTab(tab) {
+            // Hide all content
+            document.querySelectorAll('.install-content').forEach(el => el.classList.add('hidden'));
+            // Reset all tabs
+            document.querySelectorAll('.install-tab').forEach(el => {
+                el.classList.remove('bg-dark-bg');
+                el.classList.add('bg-dark-surface');
+            });
+            
+            // Show selected
+            document.getElementById(`install-${tab}`).classList.remove('hidden');
+            document.querySelector(`[data-tab="${tab}"]`).classList.remove('bg-dark-surface');
+            document.querySelector(`[data-tab="${tab}"]`).classList.add('bg-dark-bg');
+        }
+
+        // Sticky bar on scroll
+        window.addEventListener('scroll', () => {
+            const stickyBar = document.getElementById('sticky-bar');
+            if (window.scrollY > 600) {
+                stickyBar.classList.remove('hidden');
+            } else {
+                stickyBar.classList.add('hidden');
+            }
         });
+
+        // Initialize
+        showInstallTab('pip');
     </script>
 </body>
 </html>
