@@ -3,751 +3,1136 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AgentCorrect - Block agent disasters before deploy</title>
-    <meta name="description" content="Deterministic CI guardrails that fail the build when your agent would duplicate charges, wipe data, or nuke caches. Exit code 2 blocks bad deploys.">
+    <title>AgentCorrect - Stop agents from shipping disasters</title>
+    <meta name="description" content="A tiny CI check that fails your build if your AI agent would charge twice, delete tables, or nuke caches. Runs offline. Deterministic.">
     
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        'dark-bg': '#0B0F19',
-                        'dark-surface': '#0F172A',
-                        'cyan-accent': '#22D3EE',
-                        'cyan-hover': '#06B6D4',
-                    }
-                }
-            }
-        }
-    </script>
+    <!-- Inter Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
     <style>
-        * { 
-            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        :root {
+            --primary: #635BFF;
+            --danger: #EF4444;
+            --success: #10B981;
+            --dark: #0F172A;
+            --gray-50: #F9FAFB;
+            --gray-100: #F3F4F6;
+            --gray-200: #E5E7EB;
+            --gray-300: #D1D5DB;
+            --gray-400: #9CA3AF;
+            --gray-500: #6B7280;
+            --gray-600: #4B5563;
+            --gray-700: #374151;
+            --gray-800: #1F2937;
+            --gray-900: #111827;
         }
-        code, pre {
-            font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
-        @media (prefers-reduced-motion: reduce) {
-            * {
-                animation-duration: 0.01ms !important;
-                animation-iteration-count: 1 !important;
-                transition-duration: 0.01ms !important;
-            }
+        
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            font-size: 16px;
+            line-height: 1.6;
+            color: var(--gray-900);
+            background: white;
         }
-        .copy-button {
-            transition: all 150ms ease-out;
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
         }
-        .copy-button:hover {
-            transform: translateY(-1px);
+        
+        /* Header */
+        header {
+            position: sticky;
+            top: 0;
+            background: white;
+            border-bottom: 1px solid var(--gray-200);
+            z-index: 100;
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.95);
         }
-        .copy-button:active {
+        
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 0;
+        }
+        
+        .logo {
+            font-weight: 700;
+            font-size: 20px;
+            color: var(--gray-900);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .logo svg {
+            width: 24px;
+            height: 24px;
+            fill: var(--primary);
+        }
+        
+        .nav-links {
+            display: flex;
+            gap: 32px;
+            align-items: center;
+        }
+        
+        .nav-links a {
+            color: var(--gray-600);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+        
+        .nav-links a:hover {
+            color: var(--gray-900);
+        }
+        
+        .nav-cta {
+            padding: 8px 16px;
+            background: var(--primary);
+            color: white;
+            border-radius: 6px;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 600;
+            transition: opacity 0.2s;
+        }
+        
+        .nav-cta:hover {
+            opacity: 0.9;
+        }
+        
+        /* Hero */
+        .hero {
+            padding: 80px 0;
+        }
+        
+        .hero-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 60px;
+            align-items: center;
+        }
+        
+        h1 {
+            font-size: 48px;
+            font-weight: 800;
+            line-height: 1.2;
+            color: var(--gray-900);
+            margin-bottom: 16px;
+        }
+        
+        .subhead {
+            font-size: 18px;
+            color: var(--gray-600);
+            line-height: 1.6;
+            margin-bottom: 32px;
+        }
+        
+        .subhead strong {
+            color: var(--gray-900);
+            font-weight: 600;
+        }
+        
+        .hero-buttons {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        
+        .btn-primary {
+            padding: 12px 24px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        
+        .btn-primary:hover {
+            opacity: 0.9;
+        }
+        
+        .btn-secondary {
+            padding: 12px 24px;
+            background: transparent;
+            color: var(--primary);
+            border: none;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+        
+        .trust-chips {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+        
+        .chip {
+            padding: 4px 12px;
+            background: var(--gray-50);
+            border-radius: 100px;
+            font-size: 13px;
+            color: var(--gray-600);
+            border: 1px solid var(--gray-200);
+        }
+        
+        /* Finding Card */
+        .finding-card {
+            background: white;
+            border: 2px solid var(--gray-200);
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05);
+        }
+        
+        .finding-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--danger);
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+        
+        .finding-url {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-size: 14px;
+            color: var(--gray-700);
+            margin-bottom: 16px;
+        }
+        
+        .finding-details {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            font-size: 14px;
+        }
+        
+        .finding-details > div {
+            display: flex;
+            align-items: flex-start;
+        }
+        
+        .finding-label {
+            font-weight: 600;
+            min-width: 48px;
+            color: var(--gray-500);
+        }
+        
+        .finding-value {
+            color: var(--gray-700);
+        }
+        
+        .finding-value a {
+            color: var(--primary);
+            text-decoration: underline;
+        }
+        
+        .exit-code {
+            margin-top: 16px;
+            padding: 8px 12px;
+            background: var(--danger);
+            color: white;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            display: inline-block;
+        }
+        
+        .provider-logos {
+            display: flex;
+            gap: 16px;
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid var(--gray-200);
+            opacity: 0.6;
+            align-items: center;
+        }
+        
+        .provider-logos span {
+            font-size: 12px;
+            color: var(--gray-500);
+        }
+        
+        /* Sections */
+        section {
+            padding: 60px 0;
+        }
+        
+        section:nth-child(even) {
+            background: var(--gray-50);
+        }
+        
+        h2 {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 16px;
+            color: var(--gray-900);
+        }
+        
+        .section-intro {
+            font-size: 18px;
+            color: var(--gray-600);
+            margin-bottom: 40px;
+            max-width: 800px;
+        }
+        
+        /* How it works */
+        .steps {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 32px;
+            margin-bottom: 40px;
+        }
+        
+        .step {
+            display: flex;
+            gap: 12px;
+        }
+        
+        .step-number {
+            width: 32px;
+            height: 32px;
+            background: var(--primary);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+        
+        .step-content h3 {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        
+        .step-content p {
+            font-size: 14px;
+            color: var(--gray-600);
+        }
+        
+        /* Code blocks */
+        .code-tabs {
+            background: white;
+            border: 1px solid var(--gray-200);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .tab-buttons {
+            display: flex;
+            border-bottom: 1px solid var(--gray-200);
+            background: var(--gray-50);
+        }
+        
+        .tab-btn {
+            padding: 12px 20px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--gray-600);
+            position: relative;
+        }
+        
+        .tab-btn.active {
+            color: var(--primary);
+            background: white;
+        }
+        
+        .tab-btn.active::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--primary);
+        }
+        
+        .tab-content {
+            display: none;
+            position: relative;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        pre {
+            padding: 20px;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            overflow-x: auto;
+            background: var(--gray-900);
+            color: var(--gray-100);
+        }
+        
+        .copy-btn {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            padding: 6px 12px;
+            background: var(--gray-700);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            opacity: 0.8;
+        }
+        
+        .copy-btn:hover {
+            opacity: 1;
+        }
+        
+        /* Cards */
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+        }
+        
+        .card {
+            background: white;
+            border: 1px solid var(--gray-200);
+            border-radius: 8px;
+            padding: 24px;
+        }
+        
+        .card-icon {
+            width: 40px;
+            height: 40px;
+            background: var(--primary);
+            opacity: 0.1;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 16px;
+            font-size: 24px;
+        }
+        
+        .card h3 {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        
+        .card-subtitle {
+            font-size: 14px;
+            color: var(--gray-600);
+            margin-bottom: 16px;
+        }
+        
+        .card-details {
+            font-size: 13px;
+            color: var(--gray-500);
+            line-height: 1.8;
+        }
+        
+        .card-details strong {
+            color: var(--gray-600);
+        }
+        
+        /* Coverage */
+        .coverage-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 32px;
+            margin-bottom: 24px;
+        }
+        
+        .coverage-item {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid var(--gray-200);
+        }
+        
+        .coverage-label {
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        
+        .coverage-stats {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--success);
+        }
+        
+        .coverage-note {
+            font-size: 13px;
+            color: var(--gray-500);
+            margin-top: 4px;
+        }
+        
+        .coverage-examples {
+            background: var(--gray-900);
+            color: var(--gray-100);
+            padding: 16px;
+            border-radius: 6px;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-size: 13px;
+        }
+        
+        /* Demo */
+        .demo-container {
+            background: white;
+            border: 1px solid var(--gray-200);
+            border-radius: 8px;
+            padding: 24px;
+        }
+        
+        .demo-buttons {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        
+        .demo-output {
+            margin-top: 20px;
+            display: none;
+        }
+        
+        .demo-output.active {
+            display: block;
+        }
+        
+        /* Pricing */
+        .pricing-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 32px;
+            margin-top: 40px;
+        }
+        
+        .pricing-card {
+            background: white;
+            border: 2px solid var(--gray-200);
+            border-radius: 12px;
+            padding: 32px;
+            text-align: center;
+        }
+        
+        .pricing-card.featured {
+            border-color: var(--primary);
+            transform: scale(1.05);
+        }
+        
+        .price {
+            font-size: 36px;
+            font-weight: 700;
+            margin: 16px 0;
+        }
+        
+        .price-period {
+            font-size: 16px;
+            color: var(--gray-500);
+        }
+        
+        .price-features {
+            text-align: left;
+            margin: 24px 0;
+            font-size: 14px;
+            line-height: 2;
+        }
+        
+        /* FAQ */
+        .faq-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 32px;
+        }
+        
+        .faq-item h3 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        
+        .faq-item p {
+            font-size: 14px;
+            color: var(--gray-600);
+        }
+        
+        /* Footer */
+        footer {
+            padding: 40px 0;
+            background: var(--gray-900);
+            color: var(--gray-400);
+            text-align: center;
+            font-size: 14px;
+        }
+        
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: var(--success);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.3s;
+            z-index: 1000;
+        }
+        
+        .toast.show {
+            opacity: 1;
             transform: translateY(0);
         }
-        .toast {
-            animation: slide-up 250ms ease-out;
-        }
-        @keyframes slide-up {
-            from {
-                transform: translateY(10px);
-                opacity: 0;
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero-grid {
+                grid-template-columns: 1fr;
+                gap: 40px;
             }
-            to {
-                transform: translateY(0);
-                opacity: 1;
+            
+            h1 {
+                font-size: 36px;
+            }
+            
+            .steps {
+                grid-template-columns: 1fr;
+            }
+            
+            .cards {
+                grid-template-columns: 1fr;
+            }
+            
+            .coverage-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .pricing-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .faq-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .nav-links {
+                display: none;
             }
         }
     </style>
-    
-    <!-- Schema.org JSON-LD -->
-    <script type="application/ld+json">
-    {
-        "@context": "https://schema.org",
-        "@type": "SoftwareApplication",
-        "name": "AgentCorrect",
-        "applicationCategory": "DeveloperTools",
-        "operatingSystem": "Linux, macOS, Windows",
-        "description": "CI/CD guardrails for AI agents. Catches payment idempotency issues, SQL disasters, and infrastructure wipes.",
-        "offers": {
-            "@type": "Offer",
-            "price": "0",
-            "priceCurrency": "USD"
-        }
-    }
-    </script>
 </head>
-<body class="bg-dark-bg text-gray-300">
-    <!-- Toast Container -->
-    <div id="toast-container" class="fixed top-4 right-4 z-50"></div>
+<body>
+    <!-- Toast for copy feedback -->
+    <div id="toast" class="toast">Copied to clipboard!</div>
     
-    <!-- Navbar -->
-    <nav class="fixed top-0 w-full bg-dark-bg/90 backdrop-blur-sm border-b border-gray-800 z-40">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center h-14">
-                <div class="flex items-center gap-8">
-                    <div class="flex items-center gap-2">
-                        <svg class="w-6 h-6 text-cyan-accent" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5z"/>
-                        </svg>
-                        <span class="font-bold text-white">AgentCorrect</span>
+    <!-- Header -->
+    <header>
+        <nav class="container">
+            <a href="/" class="logo">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5z"/>
+                </svg>
+                AgentCorrect
+            </a>
+            <div class="nav-links">
+                <a href="#how">How it works</a>
+                <a href="#catches">What we catch</a>
+                <a href="#pricing">Pricing</a>
+                <a href="https://github.com/ishaan1345/agentcorrect">Docs</a>
+                <a href="#install" class="nav-cta">Install</a>
+            </div>
+        </nav>
+    </header>
+    
+    <!-- Hero -->
+    <section class="hero">
+        <div class="container">
+            <div class="hero-grid">
+                <div>
+                    <h1>Stop agents from shipping disasters.</h1>
+                    <p class="subhead">
+                        A tiny CI check that fails your build if your AI agent would 
+                        <strong>charge twice</strong>, <strong>delete tables</strong>, or 
+                        <strong>nuke caches</strong>. Runs offline. Deterministic.
+                    </p>
+                    <div class="hero-buttons">
+                        <button class="btn-primary" onclick="copyCIStep()">Copy CI step</button>
+                        <button class="btn-secondary" onclick="scrollToDemo()">Run 30-sec demo</button>
                     </div>
-                    <div class="hidden md:flex items-center gap-6">
-                        <a href="#docs" class="text-gray-400 hover:text-white transition-colors">Docs</a>
-                        <a href="https://github.com/ishaan1345/agentcorrect" class="text-gray-400 hover:text-white transition-colors">GitHub</a>
-                        <a href="#pricing" class="text-gray-400 hover:text-white transition-colors">Pricing</a>
+                    <div class="trust-chips">
+                        <span class="chip">Local & offline</span>
+                        <span class="chip">Deterministic</span>
+                        <span class="chip">Exit 2 = build fails</span>
+                        <span class="chip">MIT</span>
                     </div>
                 </div>
-                <button onclick="copyGitHubAction()" class="copy-button px-4 py-1.5 bg-cyan-accent text-dark-bg font-medium rounded hover:bg-cyan-hover">
-                    Copy CI step
-                </button>
+                
+                <div>
+                    <div class="finding-card">
+                        <div class="finding-header">
+                            <span>❌</span>
+                            <span>Sev-0: Missing payment idempotency</span>
+                        </div>
+                        <div class="finding-url">POST https://api.stripe.com/v1/charges</div>
+                        <div class="finding-details">
+                            <div>
+                                <span class="finding-label">Why:</span>
+                                <span class="finding-value">Stripe requires Idempotency-Key to prevent duplicate charges.</span>
+                            </div>
+                            <div>
+                                <span class="finding-label">Fix:</span>
+                                <span class="finding-value">Add header → Idempotency-Key: &lt;uuid-v4&gt;</span>
+                            </div>
+                            <div>
+                                <span class="finding-label">Docs:</span>
+                                <span class="finding-value">
+                                    <a href="https://docs.stripe.com/api/idempotent_requests">docs.stripe.com/api/idempotent_requests</a>
+                                </span>
+                            </div>
+                        </div>
+                        <span class="exit-code">Exit code on CI: 2 (build blocked)</span>
+                        <div class="provider-logos">
+                            <span>Stripe</span>
+                            <span>•</span>
+                            <span>PayPal</span>
+                            <span>•</span>
+                            <span>Square</span>
+                            <span>•</span>
+                            <span>Adyen</span>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
-    </nav>
+    </section>
     
-    <!-- Hero Section -->
-    <section class="pt-24 pb-16 px-4">
-        <div class="max-w-4xl mx-auto">
-            <h1 class="text-4xl sm:text-5xl font-bold text-white mb-4">
-                Block agent disasters before deploy.
-            </h1>
-            <p class="text-lg text-gray-400 mb-8">
-                Deterministic CI guardrails that fail the build when your agent would duplicate charges, wipe data, or nuke caches.
+    <!-- What it is -->
+    <section>
+        <div class="container">
+            <p class="section-intro">
+                <strong>AgentCorrect is a deterministic "effect guardrail" for agents:</strong> 
+                it analyzes your test/staging traces in CI and fails the build on catastrophic actions.
+            </p>
+        </div>
+    </section>
+    
+    <!-- How it works -->
+    <section id="how">
+        <div class="container">
+            <h2>How it works (3 steps)</h2>
+            
+            <div class="steps">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <div class="step-content">
+                        <h3>Run your agent tests</h3>
+                        <p>→ they write traces.jsonl</p>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <div class="step-content">
+                        <h3>Analyze locally in CI</h3>
+                        <p>→ agentcorrect analyze traces.jsonl (no network)</p>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <div class="step-content">
+                        <h3>Gate deploys</h3>
+                        <p>→ Sev-0 finding ⇒ <strong>exit 2</strong> ⇒ PR fails</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="code-tabs">
+                <div class="tab-buttons">
+                    <button class="tab-btn active" onclick="showTab('github')">GitHub Actions</button>
+                    <button class="tab-btn" onclick="showTab('bash')">Bash</button>
+                    <button class="tab-btn" onclick="showTab('powershell')">PowerShell</button>
+                </div>
+                
+                <div id="github-tab" class="tab-content active">
+                    <button class="copy-btn" onclick="copyCode('github')">Copy</button>
+                    <pre><code>- name: Agent safety check
+  run: |
+    pipx install agentcorrect
+    agentcorrect analyze traces.jsonl</code></pre>
+                </div>
+                
+                <div id="bash-tab" class="tab-content">
+                    <button class="copy-btn" onclick="copyCode('bash')">Copy</button>
+                    <pre><code>pipx install agentcorrect
+agentcorrect analyze traces.jsonl</code></pre>
+                </div>
+                
+                <div id="powershell-tab" class="tab-content">
+                    <button class="copy-btn" onclick="copyCode('powershell')">Copy</button>
+                    <pre><code>pipx install agentcorrect
+agentcorrect analyze .\traces.jsonl</code></pre>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- What we catch -->
+    <section id="catches">
+        <div class="container">
+            <h2>What we catch today</h2>
+            <p class="section-intro">(v0, zero-FP by design)</p>
+            
+            <div class="cards">
+                <div class="card">
+                    <div class="card-icon">💳</div>
+                    <h3>Payments</h3>
+                    <p class="card-subtitle">Stripe/PayPal/Square/Adyen POST <strong>without required idempotency</strong></p>
+                    <div class="card-details">
+                        <strong>Why:</strong> Retries create duplicate charges<br>
+                        <strong>Fix:</strong> Add provider's idempotency header<br>
+                        <strong>Docs:</strong> Vendor-documented requirement
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-icon">🗑️</div>
+                    <h3>SQL</h3>
+                    <p class="card-subtitle">DELETE/UPDATE <strong>without WHERE</strong> or <strong>tautologies</strong> (WHERE 1=1)</p>
+                    <div class="card-details">
+                        <strong>Why:</strong> Affects all rows, data loss<br>
+                        <strong>Fix:</strong> Add specific WHERE conditions<br>
+                        <strong>Docs:</strong> Universally catastrophic
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-icon">💥</div>
+                    <h3>Infra nukes</h3>
+                    <p class="card-subtitle">Redis FLUSHALL, Mongo dropDatabase, S3 DeleteBucket</p>
+                    <div class="card-details">
+                        <strong>Why:</strong> Service outage, total data loss<br>
+                        <strong>Fix:</strong> Use targeted operations<br>
+                        <strong>Docs:</strong> Documented disasters
+                    </div>
+                </div>
+            </div>
+            
+            <p style="margin-top: 24px; font-size: 14px; color: var(--gray-600);">
+                <em>Why these?</em> They're vendor-documented or universally catastrophic. No opinions, no ML "scores."
+            </p>
+        </div>
+    </section>
+    
+    <!-- Demo -->
+    <section id="demo" style="background: white;">
+        <div class="container">
+            <h2>Try it in 30 seconds</h2>
+            <p class="section-intro">(on this page)</p>
+            
+            <div class="demo-container">
+                <div class="demo-buttons">
+                    <button class="btn-primary" onclick="runDemo()">Use sample traces</button>
+                    <button class="btn-secondary" onclick="copyDemoCIStep()">Copy the exact CI step we just ran</button>
+                </div>
+                
+                <div id="demo-output" class="demo-output">
+                    <div class="finding-card" style="margin-bottom: 16px;">
+                        <div class="finding-header">
+                            <span>❌</span>
+                            <span>Sev-0: Missing payment idempotency</span>
+                        </div>
+                        <div class="finding-url">POST https://api.stripe.com/v1/charges</div>
+                        <div class="finding-details">
+                            <div>
+                                <span class="finding-label">Why:</span>
+                                <span class="finding-value">Stripe requires Idempotency-Key to prevent duplicate charges.</span>
+                            </div>
+                            <div>
+                                <span class="finding-label">Fix:</span>
+                                <span class="finding-value">Add header → Idempotency-Key: &lt;uuid-v4&gt;</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="finding-card" style="margin-bottom: 16px;">
+                        <div class="finding-header">
+                            <span>❌</span>
+                            <span>Sev-0: SQL disaster detected</span>
+                        </div>
+                        <div class="finding-url">DELETE FROM users WHERE 1=1</div>
+                        <div class="finding-details">
+                            <div>
+                                <span class="finding-label">Why:</span>
+                                <span class="finding-value">Tautology WHERE clause affects all rows.</span>
+                            </div>
+                            <div>
+                                <span class="finding-label">Fix:</span>
+                                <span class="finding-value">Add specific WHERE conditions</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <span class="exit-code">Exit 2</span>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Coverage -->
+    <section>
+        <div class="container">
+            <h2>Coverage honesty</h2>
+            
+            <div class="coverage-grid">
+                <div class="coverage-item">
+                    <div class="coverage-label">Payments</div>
+                    <div class="coverage-stats">42 / 38</div>
+                    <div class="coverage-note">eligible / checked (4 to unknown hosts → not assessed)</div>
+                </div>
+                
+                <div class="coverage-item">
+                    <div class="coverage-label">SQL</div>
+                    <div class="coverage-stats">19 / 19</div>
+                    <div class="coverage-note">analyzed / 0 unparseable</div>
+                </div>
+                
+                <div class="coverage-item">
+                    <div class="coverage-label">Infra</div>
+                    <div class="coverage-stats">7 / 7</div>
+                    <div class="coverage-note">eligible / checked</div>
+                </div>
+            </div>
+            
+            <p style="margin-bottom: 16px; font-size: 14px; color: var(--gray-600);">
+                <em>We print what we didn't check, with 3 example spans to fix your logging:</em>
             </p>
             
-            <!-- CTA Buttons -->
-            <div class="flex flex-col sm:flex-row gap-4 mb-8">
-                <button onclick="copyGitHubAction()" class="copy-button px-6 py-3 bg-cyan-accent text-dark-bg font-bold rounded hover:bg-cyan-hover">
-                    Copy CI step
-                </button>
-                <button onclick="openDemo()" class="px-6 py-3 border border-gray-700 text-gray-300 font-bold rounded hover:bg-dark-surface">
-                    Try demo on sample traces
-                </button>
-            </div>
-            
-            <!-- Trust Badges -->
-            <div class="flex flex-wrap gap-4 mb-8">
-                <div class="flex items-center gap-2 px-3 py-1 bg-dark-surface rounded-full border border-gray-800">
-                    <svg class="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
-                    </svg>
-                    <span class="text-sm">Local & offline</span>
-                </div>
-                <div class="flex items-center gap-2 px-3 py-1 bg-dark-surface rounded-full border border-gray-800">
-                    <svg class="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
-                    </svg>
-                    <span class="text-sm">Deterministic</span>
-                </div>
-                <div class="flex items-center gap-2 px-3 py-1 bg-dark-surface rounded-full border border-gray-800">
-                    <span class="text-sm font-mono text-red-400">Exit 2</span>
-                    <span class="text-sm">= Build blocked</span>
-                </div>
-            </div>
-            
-            <!-- Sample Finding -->
-            <div class="bg-dark-surface rounded-lg border border-gray-800 p-4 font-mono text-sm">
-                <div class="text-red-400 mb-2">❌ Sev-0  Missing payment idempotency</div>
-                <div class="text-gray-400 ml-6 space-y-1">
-                    <div>POST https://api.stripe.com/v1/charges</div>
-                    <div class="text-yellow-400">Why: Stripe relies on Idempotency-Key to prevent duplicate charges.</div>
-                    <div class="text-green-400">Fix: Add header `Idempotency-Key: &lt;uuid-v4&gt;`</div>
-                    <div class="text-blue-400">Docs → <a href="https://docs.stripe.com/api/idempotent_requests" class="underline">https://docs.stripe.com/api/idempotent_requests</a></div>
-                </div>
-            </div>
-        </div>
-    </section>
-    
-    <!-- How It Works -->
-    <section class="py-16 px-4 bg-dark-surface">
-        <div class="max-w-4xl mx-auto">
-            <h2 class="text-2xl font-bold text-white mb-8">How it works</h2>
-            
-            <div class="grid md:grid-cols-3 gap-6">
-                <div class="space-y-2">
-                    <div class="text-cyan-accent font-bold">1. Run agent tests</div>
-                    <p class="text-sm text-gray-400">Your CI runs agent tests that generate traces.jsonl</p>
-                </div>
-                <div class="space-y-2">
-                    <div class="text-cyan-accent font-bold">2. Analyze locally</div>
-                    <p class="text-sm text-gray-400">AgentCorrect checks traces offline, no network needed</p>
-                </div>
-                <div class="space-y-2">
-                    <div class="text-cyan-accent font-bold">3. Block bad deploys</div>
-                    <p class="text-sm text-gray-400">Exit code 2 fails the build, production stays safe</p>
-                </div>
-            </div>
-            
-            <!-- GitHub Actions Example -->
-            <div class="mt-8 space-y-2">
-                <div class="flex items-center justify-between">
-                    <span class="text-sm text-gray-400">GitHub Actions</span>
-                    <button onclick="copyGitHubAction()" class="copy-button text-xs px-2 py-1 bg-dark-bg border border-gray-700 rounded hover:bg-gray-800">
-                        Copy
-                    </button>
-                </div>
-                <pre class="bg-dark-bg rounded-lg p-4 overflow-x-auto border border-gray-800"><code class="text-sm"># .github/workflows/agentcorrect.yml
-name: AgentCorrect
-on:
-  push: { branches: [ main ] }
-  pull_request:
-jobs:
-  analyze:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - run: pipx install agentcorrect
-      - run: agentcorrect analyze traces.jsonl
-        # Exit 2 = Build fails</code></pre>
-            </div>
-        </div>
-    </section>
-    
-    <!-- Detectors -->
-    <section class="py-16 px-4">
-        <div class="max-w-6xl mx-auto">
-            <h2 class="text-2xl font-bold text-white mb-8">What we catch</h2>
-            
-            <div class="grid md:grid-cols-3 gap-6">
-                <!-- Payments Card -->
-                <div class="bg-dark-surface rounded-lg border border-gray-800 p-6">
-                    <div class="text-cyan-accent font-bold mb-3">Payments</div>
-                    <div class="space-y-3">
-                        <div>
-                            <div class="text-sm font-medium text-white">Missing idempotency</div>
-                            <div class="text-xs text-gray-400 mt-1">Stripe, PayPal, Square, Adyen + 21 more</div>
-                        </div>
-                        <div class="text-xs space-y-1">
-                            <div class="text-yellow-400">Why: Retries create duplicate charges</div>
-                            <div class="text-green-400">Fix: Add provider's idempotency header</div>
-                            <div class="text-blue-400">
-                                Docs: <a href="https://stripe.com/docs/api/idempotent_requests" class="underline">Stripe</a> |
-                                <a href="https://developer.paypal.com/docs/api/reference/api-requests/#http-request-headers" class="underline">PayPal</a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- SQL Card -->
-                <div class="bg-dark-surface rounded-lg border border-gray-800 p-6">
-                    <div class="text-cyan-accent font-bold mb-3">SQL</div>
-                    <div class="space-y-3">
-                        <div>
-                            <div class="text-sm font-medium text-white">DELETE/UPDATE without WHERE</div>
-                            <div class="text-xs text-gray-400 mt-1">Also catches tautologies like WHERE 1=1</div>
-                        </div>
-                        <div class="text-xs space-y-1">
-                            <div class="text-yellow-400">Why: Affects all rows, data loss</div>
-                            <div class="text-green-400">Fix: Add specific WHERE conditions</div>
-                            <div class="text-blue-400">
-                                Docs: <a href="https://owasp.org/www-community/attacks/SQL_Injection" class="underline">OWASP SQL</a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Infrastructure Card -->
-                <div class="bg-dark-surface rounded-lg border border-gray-800 p-6">
-                    <div class="text-cyan-accent font-bold mb-3">Infrastructure</div>
-                    <div class="space-y-3">
-                        <div>
-                            <div class="text-sm font-medium text-white">Cache & DB wipes</div>
-                            <div class="text-xs text-gray-400 mt-1">Redis FLUSHALL, MongoDB drop, S3 DeleteBucket</div>
-                        </div>
-                        <div class="text-xs space-y-1">
-                            <div class="text-yellow-400">Why: Service outage, data loss</div>
-                            <div class="text-green-400">Fix: Use targeted deletes</div>
-                            <div class="text-blue-400">
-                                Docs: <a href="https://redis.io/commands/flushall/" class="underline">Redis</a> |
-                                <a href="https://docs.mongodb.com/manual/reference/method/db.dropDatabase/" class="underline">MongoDB</a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-    
-    <!-- Coverage Honesty -->
-    <section class="py-16 px-4 bg-dark-surface">
-        <div class="max-w-4xl mx-auto">
-            <h2 class="text-2xl font-bold text-white mb-8">Coverage transparency</h2>
-            
-            <div class="space-y-6">
-                <!-- Payments Coverage -->
-                <div>
-                    <div class="flex justify-between mb-2">
-                        <span class="text-sm text-gray-400">Payments</span>
-                        <span class="text-sm font-mono text-gray-400">42 eligible / 38 checked</span>
-                    </div>
-                    <div class="w-full bg-dark-bg rounded-full h-2 overflow-hidden">
-                        <div class="bg-cyan-accent h-full" style="width: 90.5%"></div>
-                    </div>
-                    <details class="mt-2">
-                        <summary class="text-xs text-gray-500 cursor-pointer hover:text-gray-400">4 unparseable (click to expand)</summary>
-                        <pre class="mt-2 p-2 bg-dark-bg rounded text-xs overflow-x-auto"><code>// Missing required fields:
+            <div class="coverage-examples">
+                <code>// Missing required fields:
 {"url": "api.stripe.com", "headers": null}  // headers missing
-{"method": "POST"}  // url missing</code></pre>
-                    </details>
-                </div>
-                
-                <!-- SQL Coverage -->
-                <div>
-                    <div class="flex justify-between mb-2">
-                        <span class="text-sm text-gray-400">SQL</span>
-                        <span class="text-sm font-mono text-gray-400">15 eligible / 15 checked</span>
-                    </div>
-                    <div class="w-full bg-dark-bg rounded-full h-2 overflow-hidden">
-                        <div class="bg-green-500 h-full" style="width: 100%"></div>
-                    </div>
-                </div>
-                
-                <!-- Scope Note -->
-                <div class="text-xs text-gray-500 mt-4">
-                    <p class="font-medium mb-1">Day-1 scope:</p>
-                    <ul class="space-y-0.5">
-                        <li>✓ Payment idempotency (25 providers)</li>
-                        <li>✓ SQL DELETE/UPDATE without WHERE</li>
-                        <li>✓ Redis FLUSHALL, MongoDB drops</li>
-                        <li>✗ GraphQL mutations (coming soon)</li>
-                        <li>✗ Webhook signatures (coming soon)</li>
-                    </ul>
-                </div>
-            </div>
-        </div>
-    </section>
-    
-    <!-- Live Demo -->
-    <section id="demo" class="py-16 px-4">
-        <div class="max-w-4xl mx-auto">
-            <h2 class="text-2xl font-bold text-white mb-4">Try it (browser-only)</h2>
-            <p class="text-sm text-gray-400 mb-6">All analysis happens in your browser. Nothing leaves this page.</p>
-            
-            <div class="space-y-4">
-                <div class="flex gap-2">
-                    <button onclick="useSampleTraces()" class="px-3 py-1 bg-dark-surface border border-gray-700 rounded text-sm hover:bg-gray-800">
-                        Use sample traces
-                    </button>
-                    <button onclick="clearDemo()" class="px-3 py-1 bg-dark-surface border border-gray-700 rounded text-sm hover:bg-gray-800">
-                        Clear
-                    </button>
-                </div>
-                
-                <textarea 
-                    id="demo-input"
-                    class="w-full h-40 p-3 bg-dark-surface border border-gray-800 rounded font-mono text-xs text-gray-300 placeholder-gray-600"
-                    placeholder='Paste JSONL traces (max 200 lines)&#10;{"timestamp":"2025-01-20T10:00:00Z","role":"http","meta":{"http":{"method":"POST","url":"https://api.stripe.com/v1/charges","headers":{}}}}'
-                ></textarea>
-                
-                <button onclick="analyzeDemo()" class="px-4 py-2 bg-cyan-accent text-dark-bg font-bold rounded hover:bg-cyan-hover">
-                    Analyze
-                </button>
-                
-                <div id="demo-results" class="hidden space-y-2"></div>
+{"method": "POST"}  // url missing
+{"role": "http", "meta": {}}  // meta.http missing</code>
             </div>
         </div>
     </section>
     
     <!-- Install -->
-    <section class="py-16 px-4 bg-dark-surface">
-        <div class="max-w-4xl mx-auto">
-            <h2 class="text-2xl font-bold text-white mb-8">Install</h2>
+    <section id="install" style="background: white;">
+        <div class="container">
+            <h2>Install</h2>
             
-            <div class="space-y-4">
-                <!-- Tab buttons -->
-                <div class="flex gap-2">
-                    <button onclick="showInstallTab('pip')" class="install-tab px-3 py-1 bg-dark-bg border border-gray-700 rounded text-sm" data-tab="pip">pip</button>
-                    <button onclick="showInstallTab('pipx')" class="install-tab px-3 py-1 bg-dark-surface border border-gray-700 rounded text-sm" data-tab="pipx">pipx</button>
+            <div class="code-tabs">
+                <div class="tab-content active">
+                    <button class="copy-btn" onclick="copyInstall()">Copy</button>
+                    <pre><code>pipx install agentcorrect
+agentcorrect analyze traces.jsonl</code></pre>
+                </div>
+            </div>
+            
+            <p style="margin-top: 16px; font-size: 14px; color: var(--gray-600);">
+                <strong>Exit codes:</strong> 0 clean • 2 Sev-0 found • 4 invalid input
+            </p>
+        </div>
+    </section>
+    
+    <!-- Pricing -->
+    <section id="pricing">
+        <div class="container">
+            <h2>Pricing</h2>
+            
+            <div class="pricing-grid">
+                <div class="pricing-card">
+                    <h3>Free</h3>
+                    <div class="price">$0</div>
+                    <p class="price-features">
+                        CLI<br>
+                        Core rules<br>
+                        Local analysis
+                    </p>
+                    <button class="btn-primary" style="width: 100%;" onclick="copyInstall()">Install Free</button>
                 </div>
                 
-                <!-- Tab content -->
-                <div id="install-pip" class="install-content">
-                    <div class="flex items-center justify-between mb-2">
-                        <span class="text-sm text-gray-400">Install with pip</span>
-                        <button onclick="copyCommand('pip install agentcorrect')" class="copy-button text-xs px-2 py-1 bg-dark-bg border border-gray-700 rounded hover:bg-gray-800">
-                            Copy
-                        </button>
-                    </div>
-                    <pre class="bg-dark-bg rounded-lg p-4 overflow-x-auto border border-gray-800"><code class="text-sm">pip install agentcorrect
-agentcorrect analyze traces.jsonl
-echo $?  # 2 == Sev-0 found</code></pre>
+                <div class="pricing-card featured">
+                    <h3>Pro</h3>
+                    <div class="price">$49<span class="price-period">/mo</span></div>
+                    <p class="price-features">
+                        HTML reports<br>
+                        More providers/rules<br>
+                        Email support
+                    </p>
+                    <button class="btn-primary" style="width: 100%;">Start Pro Trial</button>
                 </div>
                 
-                <div id="install-pipx" class="install-content hidden">
-                    <div class="flex items-center justify-between mb-2">
-                        <span class="text-sm text-gray-400">Install with pipx (recommended)</span>
-                        <button onclick="copyCommand('pipx install agentcorrect')" class="copy-button text-xs px-2 py-1 bg-dark-bg border border-gray-700 rounded hover:bg-gray-800">
-                            Copy
-                        </button>
-                    </div>
-                    <pre class="bg-dark-bg rounded-lg p-4 overflow-x-auto border border-gray-800"><code class="text-sm">pipx install agentcorrect
-agentcorrect analyze traces.jsonl
-echo $?  # 2 == Sev-0 found</code></pre>
+                <div class="pricing-card">
+                    <h3>Enterprise</h3>
+                    <div class="price">Custom</div>
+                    <p class="price-features">
+                        SSO<br>
+                        Custom rules/policies<br>
+                        SLAs
+                    </p>
+                    <button class="btn-secondary" style="width: 100%;">Contact Sales</button>
                 </div>
             </div>
         </div>
     </section>
     
-    <!-- Pricing -->
-    <section id="pricing" class="py-16 px-4">
-        <div class="max-w-5xl mx-auto">
-            <h2 class="text-2xl font-bold text-white mb-8 text-center">Pricing</h2>
+    <!-- FAQ -->
+    <section style="background: white;">
+        <div class="container">
+            <h2>FAQ</h2>
+            <p class="section-intro">(short, no fluff)</p>
             
-            <div class="grid md:grid-cols-3 gap-6">
-                <!-- Free -->
-                <div class="bg-dark-surface rounded-lg border border-gray-800 p-6">
-                    <div class="text-lg font-bold text-white mb-2">Free</div>
-                    <div class="text-3xl font-bold text-white mb-4">$0</div>
-                    <div class="text-sm text-gray-400 mb-6">CLI, core rules, local analysis</div>
-                    <ul class="space-y-2 text-sm text-gray-400">
-                        <li class="flex items-start gap-2">
-                            <svg class="w-4 h-4 text-green-500 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
-                            </svg>
-                            <span>25+ payment providers</span>
-                        </li>
-                        <li class="flex items-start gap-2">
-                            <svg class="w-4 h-4 text-green-500 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
-                            </svg>
-                            <span>SQL & infra checks</span>
-                        </li>
-                        <li class="flex items-start gap-2">
-                            <svg class="w-4 h-4 text-green-500 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
-                            </svg>
-                            <span>OPA/REGO policies</span>
-                        </li>
-                    </ul>
-                    <div class="mt-6 text-xs text-gray-500">No credit card required</div>
+            <div class="faq-grid">
+                <div class="faq-item">
+                    <h3>Do you phone home?</h3>
+                    <p>No. Fully offline.</p>
                 </div>
                 
-                <!-- Pro -->
-                <div class="bg-dark-surface rounded-lg border border-cyan-accent p-6">
-                    <div class="text-lg font-bold text-white mb-2">Pro</div>
-                    <div class="text-3xl font-bold text-white mb-4">$49<span class="text-sm text-gray-400">/month</span></div>
-                    <div class="text-sm text-gray-400 mb-6">Additional providers & rules</div>
-                    <ul class="space-y-2 text-sm text-gray-400">
-                        <li class="flex items-start gap-2">
-                            <svg class="w-4 h-4 text-green-500 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
-                            </svg>
-                            <span>Everything in Free</span>
-                        </li>
-                        <li class="flex items-start gap-2">
-                            <svg class="w-4 h-4 text-green-500 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
-                            </svg>
-                            <span>GraphQL mutations</span>
-                        </li>
-                        <li class="flex items-start gap-2">
-                            <svg class="w-4 h-4 text-green-500 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
-                            </svg>
-                            <span>HTML reports</span>
-                        </li>
-                        <li class="flex items-start gap-2">
-                            <svg class="w-4 h-4 text-green-500 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
-                            </svg>
-                            <span>Email support</span>
-                        </li>
-                    </ul>
+                <div class="faq-item">
+                    <h3>False positives?</h3>
+                    <p>For the rules above: effectively none. They're spec-level checks.</p>
                 </div>
                 
-                <!-- Enterprise -->
-                <div class="bg-dark-surface rounded-lg border border-gray-800 p-6">
-                    <div class="text-lg font-bold text-white mb-2">Enterprise</div>
-                    <div class="text-3xl font-bold text-white mb-4">Custom</div>
-                    <div class="text-sm text-gray-400 mb-6">Custom rules, SSO, SLAs</div>
-                    <ul class="space-y-2 text-sm text-gray-400">
-                        <li class="flex items-start gap-2">
-                            <svg class="w-4 h-4 text-green-500 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
-                            </svg>
-                            <span>Everything in Pro</span>
-                        </li>
-                        <li class="flex items-start gap-2">
-                            <svg class="w-4 h-4 text-green-500 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
-                            </svg>
-                            <span>Custom rules</span>
-                        </li>
-                        <li class="flex items-start gap-2">
-                            <svg class="w-4 h-4 text-green-500 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
-                            </svg>
-                            <span>SAML/SSO</span>
-                        </li>
-                        <li class="flex items-start gap-2">
-                            <svg class="w-4 h-4 text-green-500 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
-                            </svg>
-                            <span>SOC2 mapping</span>
-                        </li>
-                    </ul>
-                    <button class="mt-6 w-full px-4 py-2 bg-dark-bg border border-gray-700 rounded text-sm hover:bg-gray-800">
-                        Contact sales
-                    </button>
+                <div class="faq-item">
+                    <h3>What about runtime?</h3>
+                    <p>This is <strong>pre-deploy CI gating</strong>. Runtime gateways are on the roadmap.</p>
+                </div>
+                
+                <div class="faq-item">
+                    <h3>What if logs are messy?</h3>
+                    <p>We show exactly which fields are missing so you can fix observability.</p>
                 </div>
             </div>
         </div>
     </section>
     
     <!-- Footer -->
-    <footer class="py-12 px-4 bg-dark-surface border-t border-gray-800">
-        <div class="max-w-6xl mx-auto">
-            <div class="grid md:grid-cols-4 gap-8">
-                <div>
-                    <div class="flex items-center gap-2 mb-4">
-                        <svg class="w-5 h-5 text-cyan-accent" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5z"/>
-                        </svg>
-                        <span class="font-bold text-white">AgentCorrect</span>
-                    </div>
-                    <p class="text-xs text-gray-400">Block agent disasters before deploy</p>
-                </div>
-                
-                <div>
-                    <h3 class="text-sm font-medium text-white mb-3">Resources</h3>
-                    <ul class="space-y-2 text-xs text-gray-400">
-                        <li><a href="#docs" class="hover:text-white">Documentation</a></li>
-                        <li><a href="https://github.com/ishaan1345/agentcorrect/blob/main/CHANGELOG.md" class="hover:text-white">Changelog</a></li>
-                        <li><a href="https://github.com/ishaan1345/agentcorrect" class="hover:text-white">GitHub</a></li>
-                    </ul>
-                </div>
-                
-                <div>
-                    <h3 class="text-sm font-medium text-white mb-3">Legal</h3>
-                    <ul class="space-y-2 text-xs text-gray-400">
-                        <li><a href="#privacy" class="hover:text-white">Privacy</a></li>
-                        <li><a href="#security" class="hover:text-white">Security</a></li>
-                        <li><a href="https://github.com/ishaan1345/agentcorrect/blob/main/LICENSE" class="hover:text-white">MIT License</a></li>
-                    </ul>
-                </div>
-                
-                <div>
-                    <h3 class="text-sm font-medium text-white mb-3">Stay updated</h3>
-                    <form class="flex gap-2">
-                        <input type="email" placeholder="you@example.com" class="flex-1 px-3 py-1 bg-dark-bg border border-gray-700 rounded text-sm placeholder-gray-600 focus:outline-none focus:border-cyan-accent">
-                        <button type="submit" class="px-3 py-1 bg-cyan-accent text-dark-bg font-medium rounded text-sm hover:bg-cyan-hover">
-                            Subscribe
-                        </button>
-                    </form>
-                    <p class="text-xs text-gray-500 mt-2">No spam. Unsubscribe anytime.</p>
-                </div>
-            </div>
-            
-            <div class="mt-8 pt-8 border-t border-gray-800 text-center text-xs text-gray-500">
-                © 2025 AgentCorrect. Built to prevent disasters.
-            </div>
+    <footer>
+        <div class="container">
+            <p>© 2025 AgentCorrect. MIT License. Built to prevent disasters.</p>
         </div>
     </footer>
     
-    <!-- Sticky Bottom Bar (appears after scroll) -->
-    <div id="sticky-bar" class="fixed bottom-0 left-0 right-0 bg-dark-bg/95 backdrop-blur-sm border-t border-gray-800 py-3 px-4 hidden">
-        <div class="max-w-4xl mx-auto flex items-center justify-between">
-            <span class="text-sm text-gray-400">Ready to block disasters?</span>
-            <div class="flex gap-3">
-                <button onclick="copyCommand('pipx install agentcorrect')" class="copy-button px-3 py-1 bg-dark-surface border border-gray-700 rounded text-sm hover:bg-gray-800">
-                    Install
-                </button>
-                <button onclick="copyGitHubAction()" class="copy-button px-3 py-1 bg-cyan-accent text-dark-bg font-medium rounded text-sm hover:bg-cyan-hover">
-                    Copy CI step
-                </button>
-                <button onclick="openDemo()" class="px-3 py-1 border border-gray-700 rounded text-sm hover:bg-dark-surface">
-                    Try demo
-                </button>
-            </div>
-        </div>
-    </div>
-    
     <script>
-        // GitHub Actions YAML
-        const githubActionYaml = `# .github/workflows/agentcorrect.yml
-name: AgentCorrect
-on:
-  push: { branches: [ main ] }
-  pull_request:
-jobs:
-  analyze:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - run: pipx install agentcorrect
-      - run: agentcorrect analyze traces.jsonl`;
-
-        // Sample traces for demo
-        const sampleTraces = `{"timestamp":"2025-01-20T10:00:00Z","role":"http","meta":{"http":{"method":"POST","url":"https://api.stripe.com/v1/charges","headers":{}}}}
-{"timestamp":"2025-01-20T10:01:00Z","role":"sql","meta":{"sql":{"query":"DELETE FROM users WHERE 1=1"}}}
-{"timestamp":"2025-01-20T10:02:00Z","role":"redis","meta":{"redis":{"command":"FLUSHALL"}}}`;
-
+        // GitHub Actions CI step
+        const githubCIStep = `- name: Agent safety check
+  run: |
+    pipx install agentcorrect
+    agentcorrect analyze traces.jsonl`;
+        
+        // Bash commands
+        const bashCommands = `pipx install agentcorrect
+agentcorrect analyze traces.jsonl`;
+        
+        // PowerShell commands
+        const powershellCommands = `pipx install agentcorrect
+agentcorrect analyze .\\traces.jsonl`;
+        
+        // Install command
+        const installCommand = `pipx install agentcorrect
+agentcorrect analyze traces.jsonl`;
+        
         // Copy functions
-        async function copyToClipboard(text, buttonElement = null) {
+        async function copyToClipboard(text) {
             try {
                 await navigator.clipboard.writeText(text);
-                showToast('Copied ✓');
-                
-                if (buttonElement) {
-                    const originalText = buttonElement.textContent;
-                    buttonElement.textContent = 'Copied ✓';
-                    setTimeout(() => {
-                        buttonElement.textContent = originalText;
-                    }, 2000);
-                }
+                showToast();
             } catch (err) {
-                showToast('Copy failed', 'error');
+                // Fallback for older browsers
+                const textarea = document.createElement('textarea');
+                textarea.value = text;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                showToast();
             }
         }
-
-        function copyGitHubAction() {
-            copyToClipboard(githubActionYaml);
-        }
-
-        function copyCommand(command) {
-            copyToClipboard(command);
-        }
-
-        // Toast notifications
-        function showToast(message, type = 'success') {
-            const toast = document.createElement('div');
-            toast.className = `toast px-4 py-2 rounded ${type === 'success' ? 'bg-green-500' : 'bg-red-500'} text-white text-sm font-medium`;
-            toast.textContent = message;
-            
-            const container = document.getElementById('toast-container');
-            container.appendChild(toast);
-            
+        
+        function showToast() {
+            const toast = document.getElementById('toast');
+            toast.classList.add('show');
             setTimeout(() => {
-                toast.remove();
-            }, 3000);
+                toast.classList.remove('show');
+            }, 2000);
         }
-
+        
+        function copyCIStep() {
+            copyToClipboard(githubCIStep);
+        }
+        
+        function copyCode(type) {
+            if (type === 'github') {
+                copyToClipboard(githubCIStep);
+            } else if (type === 'bash') {
+                copyToClipboard(bashCommands);
+            } else if (type === 'powershell') {
+                copyToClipboard(powershellCommands);
+            }
+        }
+        
+        function copyInstall() {
+            copyToClipboard(installCommand);
+        }
+        
+        function copyDemoCIStep() {
+            copyToClipboard(githubCIStep);
+        }
+        
+        // Tab switching
+        function showTab(tab) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(el => {
+                el.classList.remove('active');
+            });
+            document.querySelectorAll('.tab-btn').forEach(el => {
+                el.classList.remove('active');
+            });
+            
+            // Show selected tab
+            document.getElementById(tab + '-tab').classList.add('active');
+            event.target.classList.add('active');
+        }
+        
         // Demo functions
-        function openDemo() {
+        function scrollToDemo() {
             document.getElementById('demo').scrollIntoView({ behavior: 'smooth' });
-            useSampleTraces();
+            setTimeout(runDemo, 500);
         }
-
-        function useSampleTraces() {
-            document.getElementById('demo-input').value = sampleTraces;
+        
+        function runDemo() {
+            const output = document.getElementById('demo-output');
+            output.classList.add('active');
         }
-
-        function clearDemo() {
-            document.getElementById('demo-input').value = '';
-            document.getElementById('demo-results').classList.add('hidden');
-        }
-
-        function analyzeDemo() {
-            const input = document.getElementById('demo-input').value;
-            if (!input.trim()) {
-                showToast('Please enter some traces', 'error');
-                return;
-            }
-
-            const results = document.getElementById('demo-results');
-            results.innerHTML = '';
-            results.classList.remove('hidden');
-
-            let exitCode = 0;
-            const lines = input.trim().split('\n').slice(0, 200); // Max 200 lines
-            
-            lines.forEach(line => {
-                try {
-                    const trace = JSON.parse(line);
-                    
-                    // Check for payment idempotency
-                    if (trace.role === 'http' && trace.meta?.http?.url?.includes('stripe.com')) {
-                        if (!trace.meta.http.headers?.['Idempotency-Key']) {
-                            exitCode = 2;
-                            results.innerHTML += `
-                                <div class="bg-dark-surface rounded p-3 border border-red-500/50">
-                                    <div class="text-red-400 font-bold text-sm mb-1">❌ Sev-0: Missing payment idempotency</div>
-                                    <div class="text-xs text-gray-400 space-y-0.5 ml-6">
-                                        <div>POST ${trace.meta.http.url}</div>
-                                        <div class="text-yellow-400">Why: Stripe requires Idempotency-Key</div>
-                                        <div class="text-green-400">Fix: Add header 'Idempotency-Key: &lt;uuid&gt;'</div>
-                                    </div>
-                                </div>
-                            `;
-                        }
-                    }
-                    
-                    // Check for SQL disasters
-                    if (trace.role === 'sql' && trace.meta?.sql?.query) {
-                        const query = trace.meta.sql.query.toUpperCase();
-                        if ((query.includes('DELETE') && !query.includes('WHERE')) || query.includes('WHERE 1=1')) {
-                            exitCode = 2;
-                            results.innerHTML += `
-                                <div class="bg-dark-surface rounded p-3 border border-red-500/50">
-                                    <div class="text-red-400 font-bold text-sm mb-1">❌ Sev-0: Dangerous SQL operation</div>
-                                    <div class="text-xs text-gray-400 space-y-0.5 ml-6">
-                                        <div>${trace.meta.sql.query}</div>
-                                        <div class="text-yellow-400">Why: Affects all rows</div>
-                                        <div class="text-green-400">Fix: Add specific WHERE conditions</div>
-                                    </div>
-                                </div>
-                            `;
-                        }
-                    }
-                    
-                    // Check for Redis FLUSHALL
-                    if (trace.role === 'redis' && trace.meta?.redis?.command?.toUpperCase().includes('FLUSHALL')) {
-                        exitCode = 2;
-                        results.innerHTML += `
-                            <div class="bg-dark-surface rounded p-3 border border-red-500/50">
-                                <div class="text-red-400 font-bold text-sm mb-1">❌ Sev-0: Redis cache wipe</div>
-                                <div class="text-xs text-gray-400 space-y-0.5 ml-6">
-                                    <div>Command: ${trace.meta.redis.command}</div>
-                                    <div class="text-yellow-400">Why: Deletes all keys</div>
-                                    <div class="text-green-400">Fix: Use targeted DEL</div>
-                                </div>
-                            </div>
-                        `;
-                    }
-                } catch (e) {
-                    // Invalid JSON line, skip
-                }
-            });
-
-            // Add exit code
-            results.innerHTML += `
-                <div class="mt-4 p-3 bg-dark-surface rounded border ${exitCode === 0 ? 'border-green-500/50' : 'border-red-500/50'}">
-                    <div class="font-mono text-sm ${exitCode === 0 ? 'text-green-400' : 'text-red-400'}">
-                        Exit code: ${exitCode} ${exitCode === 0 ? '✓ Clean' : '✗ Build would fail'}
-                    </div>
-                </div>
-            `;
-        }
-
-        // Install tabs
-        function showInstallTab(tab) {
-            // Hide all content
-            document.querySelectorAll('.install-content').forEach(el => el.classList.add('hidden'));
-            // Reset all tabs
-            document.querySelectorAll('.install-tab').forEach(el => {
-                el.classList.remove('bg-dark-bg');
-                el.classList.add('bg-dark-surface');
-            });
-            
-            // Show selected
-            document.getElementById(`install-${tab}`).classList.remove('hidden');
-            document.querySelector(`[data-tab="${tab}"]`).classList.remove('bg-dark-surface');
-            document.querySelector(`[data-tab="${tab}"]`).classList.add('bg-dark-bg');
-        }
-
-        // Sticky bar on scroll
-        window.addEventListener('scroll', () => {
-            const stickyBar = document.getElementById('sticky-bar');
-            if (window.scrollY > 600) {
-                stickyBar.classList.remove('hidden');
-            } else {
-                stickyBar.classList.add('hidden');
-            }
-        });
-
-        // Initialize
-        showInstallTab('pip');
     </script>
 </body>
 </html>
