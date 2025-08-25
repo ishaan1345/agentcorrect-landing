@@ -353,7 +353,10 @@ class AgentCorrectUltimate:
                 "severity": "SEV0",
                 "type": "payment_no_idempotency",
                 "provider": provider.name,
+                "url": url,
                 "description": f"{provider.name} payment without idempotency key",
+                "idempotency_field": provider.idempotency_field,
+                "location": provider.location,
                 "confidence": 1.0
             })
         

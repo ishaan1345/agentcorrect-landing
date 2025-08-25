@@ -18,24 +18,58 @@ def print_human_summary(findings: List[Dict], coverage: Dict[str, Any], total_ev
     sev1_findings = [f for f in findings if f.get("severity") == "SEV1"]
     
     if sev0_findings:
-        print("\n🚨 SEV0 - Critical Issues (CI/CD Blockers):")
+        print("\n[SEV0] Critical Issues - CI/CD Block:")
         print("-" * 50)
         
-        # Group by type
-        by_type = {}
-        for f in sev0_findings:
-            ftype = f.get("type", "unknown")
-            by_type[ftype] = by_type.get(ftype, 0) + 1
-        
-        for ftype, count in by_type.items():
+        for finding in sev0_findings:
+            ftype = finding.get("type", "unknown")
+            
             if ftype == "payment_no_idempotency":
-                print(f"❌ Missing payment idempotency — {count} operations")
-                print("   Fix: Add idempotency keys to payment POST requests")
-            elif ftype == "sql_unbounded_write":
-                print(f"❌ SQL unbounded writes — {count} queries")
-                print("   Fix: Add WHERE clauses to DELETE/UPDATE queries")
+                provider = finding.get("provider", "Unknown")
+                url = finding.get("url", "")
+                field = finding.get("idempotency_field", "")
+                location = finding.get("location", "header")
+                
+                print(f"\n[FAIL] Missing payment idempotency")
+                print(f"   Endpoint: {url}")
+                print(f"   Provider: {provider}")
+                print(f"   Why: {provider} requires idempotency to prevent duplicate charges")
+                if location == "header":
+                    print(f"   Fix: Add header '{field}: <unique-order-id>'")
+                else:
+                    print(f"   Fix: Add body field '{field}': '<unique-order-id>'")
+                print(f"   Docs: See {provider.lower()}.com/docs/idempotency")
+            
+            elif ftype in ["sql_tautology", "sql_no_where", "sql_destructive"]:
+                query = finding.get("query", "")[:100]
+                desc = finding.get("description", "")
+                print(f"\n[FAIL] Dangerous SQL operation")
+                print(f"   Query: {query}...")
+                print(f"   Why: {desc}")
+                print(f"   Fix: Add WHERE clause with specific conditions")
+                
+            elif ftype == "redis_flushall":
+                print(f"\n[FAIL] Redis cache wipe")
+                print(f"   Command: FLUSHALL")
+                print(f"   Why: Deletes all keys in Redis, causing service outage")
+                print(f"   Fix: Use DEL with specific keys or SCAN+DEL pattern")
+                
+            elif ftype == "mongo_drop_collection":
+                print(f"\n[FAIL] MongoDB destructive operation")
+                print(f"   Operation: dropDatabase/dropCollection")
+                print(f"   Why: Permanently deletes data")
+                print(f"   Fix: Use targeted deletes with query filters")
+                
+            elif ftype == "s3_delete_bucket":
+                bucket = finding.get("bucket", "")
+                print(f"\n[FAIL] S3 bucket deletion")
+                print(f"   Bucket: {bucket}")
+                print(f"   Why: Permanently deletes all objects in bucket")
+                print(f"   Fix: Use object lifecycle policies or targeted deletes")
+                
             else:
-                print(f"❌ {ftype} — {count} issues")
+                print(f"\n[FAIL] {ftype}")
+                print(f"   Details: {finding.get('description', '')}")
     
     if sev1_findings:
         print("\n⚠️  SEV1 - Advisory Issues (Non-blocking):")

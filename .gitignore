@@ -37,12 +37,35 @@ htmlcov/
 
 # Environment
 .env
+.env.*
+*.env
+!.env.example
 .venv
 env/
 venv/
 ENV/
 env.bak/
 venv.bak/
+
+# Security - Sensitive files
+*.key
+*.pem
+*.p12
+*.pfx
+*.crt
+*.cer
+*_rsa
+*_dsa
+*_ecdsa
+*_ed25519
+secrets/
+credentials/
+config/production.yml
+config/production.json
+*apikey*
+*api_key*
+!*detector*.py
+!*compliance.py
 
 # Output
 out/
