@@ -1,0 +1,9 @@
+name = "agentcorrect-landing"
+compatibility_date = "2024-09-26"
+
+[assets]
+directory = "./"
+
+# Optional: handle 404s
+[[assets.not_found_handling]]
+mode = "404-page"
