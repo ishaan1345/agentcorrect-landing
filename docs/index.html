@@ -4,7 +4,23 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AgentCorrect - Stop AI agents from breaking production</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --accent: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --text-muted: #64748b;
+            --surface: #ffffff;
+            --surface-elevated: #f8fafc;
+            --border-light: #e2e8f0;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -12,22 +28,29 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+            font-feature-settings: 'cv11', 'ss01';
             line-height: 1.6;
-            color: #333;
-            background: #fff;
+            color: var(--text-primary);
+            background: var(--surface);
+            scroll-behavior: smooth;
         }
 
         .container {
             max-width: 1200px;
             margin: 0 auto;
-            padding: 0 20px;
+            padding: 0 24px;
         }
 
         /* Header */
         header {
-            padding: 20px 0;
-            border-bottom: 1px solid #eee;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            backdrop-filter: blur(20px);
+            background: rgba(248, 250, 252, 0.8);
+            border-bottom: 1px solid var(--border-light);
+            padding: 16px 0;
         }
 
         .nav {
@@ -37,112 +60,225 @@
         }
 
         .logo {
-            font-size: 24px;
+            font-size: 20px;
             font-weight: 700;
-            color: #000;
+            color: var(--text-primary);
             text-decoration: none;
+            letter-spacing: -0.025em;
         }
 
         .nav-links {
             display: flex;
-            gap: 30px;
+            gap: 32px;
             list-style: none;
+            align-items: center;
         }
 
         .nav-links a {
             text-decoration: none;
-            color: #666;
+            color: var(--text-secondary);
             font-weight: 500;
+            font-size: 15px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
         }
 
         .nav-links a:hover {
-            color: #000;
+            color: var(--text-primary);
+        }
+
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: var(--primary);
+            transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .nav-links a:hover::after {
+            width: 100%;
         }
 
         /* Hero */
         .hero {
-            padding: 80px 0;
+            padding: 120px 0 160px;
             text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(ellipse 80% 50% at 50% -20%, rgba(120, 113, 208, 0.3), transparent);
+            pointer-events: none;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 2;
         }
 
         .hero h1 {
-            font-size: 48px;
+            font-size: clamp(48px, 8vw, 72px);
             font-weight: 800;
-            line-height: 1.2;
-            margin-bottom: 24px;
-            color: #000;
+            line-height: 1.1;
+            margin-bottom: 32px;
+            background: linear-gradient(135deg, var(--text-primary) 0%, #475569 100%);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.04em;
         }
 
         .hero .subtitle {
-            font-size: 20px;
-            color: #666;
-            margin-bottom: 40px;
-            max-width: 600px;
+            font-size: 22px;
+            color: var(--text-secondary);
+            margin-bottom: 48px;
+            max-width: 640px;
             margin-left: auto;
             margin-right: auto;
+            line-height: 1.5;
+            font-weight: 400;
+        }
+
+        .cta-group {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 64px;
         }
 
         .cta-button {
-            background: #000;
-            color: #fff;
+            background: var(--primary);
+            color: white;
             padding: 16px 32px;
             border: none;
-            border-radius: 8px;
+            border-radius: 12px;
             font-size: 16px;
             font-weight: 600;
             cursor: pointer;
             text-decoration: none;
-            display: inline-block;
-            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: var(--shadow-md);
+            font-family: inherit;
         }
 
         .cta-button:hover {
-            background: #333;
             transform: translateY(-2px);
+            box-shadow: var(--shadow-xl);
         }
 
-        /* Demo */
+        .cta-button-secondary {
+            background: var(--surface);
+            color: var(--text-primary);
+            border: 1px solid var(--border-light);
+        }
+
+        .cta-button-secondary:hover {
+            background: var(--surface-elevated);
+            border-color: #cbd5e1;
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid var(--border-light);
+            border-radius: 24px;
+            padding: 8px 16px;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: 24px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background: #22c55e;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Demo Section */
         .demo {
-            background: #f8f9fa;
-            padding: 60px 0;
+            padding: 120px 0;
+            background: linear-gradient(to bottom, var(--surface) 0%, var(--surface-elevated) 100%);
         }
 
         .demo-content {
-            max-width: 800px;
+            max-width: 900px;
             margin: 0 auto;
             text-align: center;
         }
 
         .demo h2 {
-            font-size: 36px;
+            font-size: 42px;
             font-weight: 700;
-            margin-bottom: 20px;
-            color: #000;
+            margin-bottom: 24px;
+            color: var(--text-primary);
+            letter-spacing: -0.02em;
         }
 
         .demo .description {
-            font-size: 18px;
-            color: #666;
-            margin-bottom: 40px;
+            font-size: 20px;
+            color: var(--text-secondary);
+            margin-bottom: 64px;
+            line-height: 1.6;
         }
 
         .terminal {
-            background: #1a1a1a;
-            border-radius: 12px;
-            padding: 30px;
-            font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+            background: linear-gradient(145deg, #1e293b 0%, #0f172a 100%);
+            border-radius: 16px;
+            padding: 24px;
+            font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
             font-size: 14px;
             line-height: 1.6;
-            color: #fff;
+            color: #e2e8f0;
             text-align: left;
-            margin-bottom: 40px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            margin-bottom: 48px;
+            box-shadow: var(--shadow-xl);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .terminal::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
         }
 
         .terminal-header {
             display: flex;
+            align-items: center;
             gap: 8px;
-            margin-bottom: 20px;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         .terminal-dot {
@@ -151,116 +287,200 @@
             border-radius: 50%;
         }
 
-        .terminal-dot:nth-child(1) { background: #ff5f57; }
-        .terminal-dot:nth-child(2) { background: #ffbd2e; }
-        .terminal-dot:nth-child(3) { background: #28ca42; }
+        .terminal-dot:nth-child(1) { background: #ef4444; }
+        .terminal-dot:nth-child(2) { background: #f59e0b; }
+        .terminal-dot:nth-child(3) { background: #22c55e; }
 
-        .terminal-line {
-            margin: 8px 0;
+        .terminal-title {
+            margin-left: auto;
+            font-size: 12px;
+            color: #64748b;
         }
 
-        .prompt { color: #00d4aa; }
-        .command { color: #fff; }
-        .output { color: #8e8e93; }
-        .error { color: #ff453a; }
-        .success { color: #32d74b; }
-        .warning { color: #ff9f0a; }
+        .terminal-line {
+            margin: 10px 0;
+        }
+
+        .prompt { color: #22d3ee; font-weight: 600; }
+        .command { color: #e2e8f0; }
+        .output { color: #94a3b8; }
+        .error { color: #f87171; font-weight: 600; }
+        .success { color: #4ade80; font-weight: 600; }
+        .warning { color: #fbbf24; }
 
         .install-code {
-            background: #f6f8fa;
-            padding: 16px;
-            border-radius: 8px;
-            font-family: monospace;
+            background: linear-gradient(145deg, #f8fafc 0%, #e2e8f0 100%);
+            padding: 20px 24px;
+            border-radius: 12px;
+            font-family: 'SF Mono', monospace;
             font-size: 16px;
-            margin: 20px 0;
-            border: 1px solid #e1e4e8;
+            margin: 32px 0;
+            border: 1px solid var(--border-light);
+            color: var(--text-primary);
+            font-weight: 600;
+            box-shadow: var(--shadow-sm);
         }
 
         /* Features */
         .features {
-            padding: 80px 0;
+            padding: 120px 0;
+        }
+
+        .features-header {
+            text-align: center;
+            max-width: 640px;
+            margin: 0 auto 80px;
+        }
+
+        .features h2 {
+            font-size: 42px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 24px;
+            letter-spacing: -0.02em;
+        }
+
+        .features-subtitle {
+            font-size: 20px;
+            color: var(--text-secondary);
+            line-height: 1.6;
         }
 
         .features-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
             gap: 40px;
-            margin-top: 60px;
+            margin-top: 80px;
         }
 
         .feature {
+            background: var(--surface);
+            border: 1px solid var(--border-light);
+            border-radius: 16px;
+            padding: 40px;
             text-align: center;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .feature::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: var(--primary);
+            transform: scaleX(0);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .feature:hover {
+            transform: translateY(-8px);
+            box-shadow: var(--shadow-xl);
+        }
+
+        .feature:hover::before {
+            transform: scaleX(1);
+        }
+
+        .feature-icon {
+            width: 64px;
+            height: 64px;
+            margin: 0 auto 24px;
+            background: var(--primary);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: white;
+            font-weight: 600;
         }
 
         .feature h3 {
             font-size: 24px;
             font-weight: 700;
             margin-bottom: 16px;
-            color: #000;
+            color: var(--text-primary);
+            letter-spacing: -0.01em;
         }
 
         .feature p {
-            color: #666;
+            color: var(--text-secondary);
             font-size: 16px;
-        }
-
-        .feature-icon {
-            font-size: 48px;
-            margin-bottom: 20px;
-        }
-
-        .section-title {
-            text-align: center;
-            font-size: 36px;
-            font-weight: 700;
-            color: #000;
+            line-height: 1.6;
         }
 
         /* Footer */
         footer {
-            background: #f8f9fa;
-            padding: 40px 0;
+            background: linear-gradient(to top, #0f172a 0%, var(--surface-elevated) 100%);
+            padding: 80px 0 40px;
             text-align: center;
-            border-top: 1px solid #eee;
+        }
+
+        .footer-content {
+            max-width: 480px;
+            margin: 0 auto;
         }
 
         .footer-links {
             display: flex;
             justify-content: center;
-            gap: 30px;
-            margin-bottom: 20px;
+            gap: 32px;
+            margin-bottom: 32px;
+            flex-wrap: wrap;
         }
 
         .footer-links a {
-            color: #666;
+            color: var(--text-secondary);
             text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .footer-links a:hover {
-            color: #000;
+            color: var(--text-primary);
         }
 
         .copyright {
-            color: #999;
+            color: var(--text-muted);
             font-size: 14px;
+            padding-top: 32px;
+            border-top: 1px solid var(--border-light);
         }
 
         /* Responsive */
         @media (max-width: 768px) {
+            .container {
+                padding: 0 16px;
+            }
+
             .nav-links {
                 display: none;
             }
 
-            .hero h1 {
-                font-size: 36px;
+            .hero {
+                padding: 80px 0 120px;
             }
 
-            .hero .subtitle {
-                font-size: 18px;
+            .demo, .features {
+                padding: 80px 0;
             }
 
-            .demo h2 {
-                font-size: 28px;
+            .cta-group {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .features-grid {
+                grid-template-columns: 1fr;
+                gap: 32px;
+            }
+
+            .feature {
+                padding: 32px 24px;
             }
 
             .terminal {
@@ -268,9 +488,22 @@
                 padding: 20px;
             }
 
-            .features-grid {
-                grid-template-columns: 1fr;
-                gap: 30px;
+            .footer-links {
+                gap: 24px;
+            }
+        }
+
+        /* Smooth animations */
+        .fade-in {
+            opacity: 0;
+            transform: translateY(30px);
+            animation: fadeInUp 0.6s ease-out forwards;
+        }
+
+        @keyframes fadeInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
             }
         }
     </style>
@@ -293,12 +526,26 @@
     <!-- Hero -->
     <section class="hero">
         <div class="container">
-            <h1>Stop AI agents from breaking production</h1>
-            <p class="subtitle">
-                Catch payment duplicates, SQL disasters, and data destruction before they hit production. 
-                Deterministic CI/CD guardrails that actually work.
-            </p>
-            <a href="#demo" class="cta-button">See how it works</a>
+            <div class="hero-content">
+                <div class="hero-badge">
+                    <div class="status-dot"></div>
+                    <span>Trusted by teams shipping AI agents</span>
+                </div>
+                <h1>Stop AI agents from breaking production</h1>
+                <p class="subtitle">
+                    Beautiful CI/CD guardrails that catch payment duplicates, SQL disasters, and data destruction 
+                    before they reach your customers. Deterministic protection that actually works.
+                </p>
+                <div class="cta-group">
+                    <a href="#demo" class="cta-button">
+                        <span>See how it works</span>
+                        <span>→</span>
+                    </a>
+                    <a href="https://github.com/ishaan1345/agentcorrect" class="cta-button cta-button-secondary">
+                        View on GitHub
+                    </a>
+                </div>
+            </div>
         </div>
     </section>
 
@@ -306,10 +553,10 @@
     <section class="demo" id="demo">
         <div class="container">
             <div class="demo-content">
-                <h2>Real example</h2>
+                <h2>Real-world protection</h2>
                 <p class="description">
                     Your AI agent retries a failed Stripe payment without an idempotency key. 
-                    AgentCorrect catches this and blocks your CI/CD build.
+                    AgentCorrect detects the issue and blocks your deployment automatically.
                 </p>
                 
                 <div class="terminal">
@@ -317,33 +564,37 @@
                         <div class="terminal-dot"></div>
                         <div class="terminal-dot"></div>
                         <div class="terminal-dot"></div>
+                        <div class="terminal-title">agentcorrect-analysis</div>
                     </div>
                     <div class="terminal-line">
                         <span class="prompt">$</span>
                         <span class="command"> agentcorrect analyze trace.jsonl</span>
                     </div>
                     <div class="terminal-line">
-                        <span class="output">Analyzing AI agent execution traces...</span>
+                        <span class="output">◦ Analyzing AI agent execution traces...</span>
                     </div>
                     <div class="terminal-line">
-                        <span class="output">Found: stripe.Charge.create() in payment flow</span>
+                        <span class="output">◦ Found: stripe.Charge.create() in payment flow</span>
+                    </div>
+                    <div class="terminal-line">
+                        <span class="output">◦ Scanning 25+ payment provider requirements...</span>
                     </div>
                     <div class="terminal-line"></div>
                     <div class="terminal-line">
-                        <span class="error">[FAIL] Missing payment idempotency key</span>
+                        <span class="error">✖ [CRITICAL] Missing payment idempotency key</span>
                     </div>
                     <div class="terminal-line">
                         <span class="output">  Provider: Stripe</span>
                     </div>
                     <div class="terminal-line">
-                        <span class="output">  Risk: Duplicate charges on retry</span>
+                        <span class="output">  Risk: Customer charged twice on retry</span>
                     </div>
                     <div class="terminal-line">
-                        <span class="success">  Fix: Add 'Idempotency-Key' header</span>
+                        <span class="success">  Fix: Add 'Idempotency-Key' header with unique value</span>
                     </div>
                     <div class="terminal-line"></div>
                     <div class="terminal-line">
-                        <span class="error">Exit code: 2 (Build blocked)</span>
+                        <span class="error">Exit code: 2 (Deployment blocked)</span>
                     </div>
                 </div>
 
@@ -357,30 +608,36 @@
     <!-- Features -->
     <section class="features" id="features">
         <div class="container">
-            <h2 class="section-title">Catches disasters before they happen</h2>
+            <div class="features-header">
+                <h2>Comprehensive protection</h2>
+                <p class="features-subtitle">
+                    Three layers of deterministic safety checks that prevent the disasters 
+                    that keep engineering teams awake at night.
+                </p>
+            </div>
             <div class="features-grid">
                 <div class="feature">
                     <div class="feature-icon">💳</div>
                     <h3>Payment Protection</h3>
                     <p>
-                        Enforces idempotency requirements for Stripe, PayPal, Square, and 20+ providers. 
-                        Prevents duplicate charges when agents retry.
+                        Enforces idempotency requirements for Stripe, PayPal, Square, and 25+ payment providers. 
+                        Prevents duplicate charges when your AI agents retry failed operations.
                     </p>
                 </div>
                 <div class="feature">
-                    <div class="feature-icon">🗄️</div>
-                    <h3>SQL Safety</h3>
+                    <div class="feature-icon">🛡️</div>
+                    <h3>SQL Safety Guards</h3>
                     <p>
-                        Catches DELETE without WHERE, dangerous UPDATEs, and TRUNCATE operations. 
-                        AST parsing for zero false positives.
+                        Catches dangerous DELETE operations, missing WHERE clauses, and TRUNCATE commands 
+                        using AST parsing. Zero false positives, 100% protection.
                     </p>
                 </div>
                 <div class="feature">
-                    <div class="feature-icon">🔧</div>
-                    <h3>Infrastructure Guards</h3>
+                    <div class="feature-icon">⚡</div>
+                    <h3>Infrastructure Safety</h3>
                     <p>
-                        Blocks Redis FLUSHALL, MongoDB drops, and S3 deletions. 
-                        Prevents cache and data wipes across 25+ services.
+                        Blocks Redis FLUSHALL, MongoDB drops, and S3 bucket deletions. 
+                        Prevents cache wipes and data destruction across your entire stack.
                     </p>
                 </div>
             </div>
@@ -390,15 +647,51 @@
     <!-- Footer -->
     <footer>
         <div class="container">
-            <div class="footer-links">
-                <a href="https://github.com/ishaan1345/agentcorrect">GitHub</a>
-                <a href="https://pypi.org/project/agentcorrect/">PyPI</a>
-                <a href="https://github.com/ishaan1345/agentcorrect/blob/main/README.md">Documentation</a>
-            </div>
-            <div class="copyright">
-                © 2025 AgentCorrect. MIT License.
+            <div class="footer-content">
+                <div class="footer-links">
+                    <a href="https://github.com/ishaan1345/agentcorrect">GitHub</a>
+                    <a href="https://pypi.org/project/agentcorrect/">PyPI</a>
+                    <a href="https://github.com/ishaan1345/agentcorrect/blob/main/README.md">Documentation</a>
+                </div>
+                <div class="copyright">
+                    © 2025 AgentCorrect. Released under MIT License.
+                </div>
             </div>
         </div>
     </footer>
+
+    <script>
+        // Smooth scroll for internal links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+
+        // Add fade-in animation to sections on scroll
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('fade-in');
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.feature').forEach(el => {
+            observer.observe(el);
+        });
+    </script>
 </body>
 </html>
