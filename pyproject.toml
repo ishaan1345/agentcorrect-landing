@@ -29,9 +29,9 @@ keywords = ["ai-safety", "cicd", "stripe", "payment", "idempotency", "llm", "age
 
 [project.urls]
 Homepage = "https://agentcorrect.com"
-Repository = "https://github.com/ishaan-jaff/agentcorrect"
-Documentation = "https://github.com/ishaan-jaff/agentcorrect#readme"
-"Bug Tracker" = "https://github.com/ishaan-jaff/agentcorrect/issues"
+Repository = "https://github.com/ishaan1345/agentcorrect"
+Documentation = "https://github.com/ishaan1345/agentcorrect#readme"
+"Bug Tracker" = "https://github.com/ishaan1345/agentcorrect/issues"
 
 [project.scripts]
 agentcorrect = "agentcorrect.cli:main"
