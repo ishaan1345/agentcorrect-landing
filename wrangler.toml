@@ -1,0 +1,14 @@
+name = "agentcorrect-landing"
+main = "src/index.js"
+compatibility_date = "2024-09-26"
+
+[assets]
+directory = "./"
+
+[[routes]]
+pattern = "agentcorrect.com/*"
+zone_name = "agentcorrect.com"
+
+[[routes]]
+pattern = "www.agentcorrect.com/*"
+zone_name = "agentcorrect.com"
