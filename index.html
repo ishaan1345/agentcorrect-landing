@@ -3,222 +3,292 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AgentCorrect - Your AI agent is charging customers 47 times right now</title>
+    <title>AgentCorrect - Prevent payment disasters before deployment</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         
         body {
-            font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', monospace;
-            background: #000;
-            color: #0f0;
-            padding: 20px;
-            line-height: 1.4;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #fff;
+            color: #000;
+            line-height: 1.6;
         }
 
-        .terminal {
-            max-width: 1000px;
+        header {
+            padding: 20px;
+            border-bottom: 1px solid #e5e5e5;
+        }
+
+        .container {
+            max-width: 900px;
             margin: 0 auto;
+            padding: 40px 20px;
         }
 
         h1 {
-            color: #ff0000;
-            font-size: 24px;
-            margin-bottom: 20px;
-            animation: blink 1s infinite;
+            font-size: 32px;
+            font-weight: 600;
+            margin-bottom: 10px;
         }
 
-        @keyframes blink {
-            0%, 50% { opacity: 1; }
-            51%, 100% { opacity: 0.3; }
+        .subtitle {
+            font-size: 18px;
+            color: #666;
+            margin-bottom: 40px;
         }
 
-        .demo {
-            border: 1px solid #333;
+        .example {
+            background: #f8f8f8;
+            border: 1px solid #e5e5e5;
+            border-radius: 8px;
             padding: 20px;
             margin: 20px 0;
-            position: relative;
-            min-height: 400px;
+            font-family: 'SF Mono', Monaco, monospace;
+            font-size: 14px;
         }
 
-        .charges {
-            position: absolute;
-            top: 20px;
-            left: 20px;
+        .problem {
+            background: #fff5f5;
+            border-left: 3px solid #dc2626;
+            padding: 15px;
+            margin: 20px 0;
+        }
+
+        .solution {
+            background: #f0fdf4;
+            border-left: 3px solid #16a34a;
+            padding: 15px;
+            margin: 20px 0;
+        }
+
+        .demo-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 40px 0;
+        }
+
+        .demo-box {
+            border: 1px solid #e5e5e5;
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .demo-title {
+            font-weight: 600;
+            margin-bottom: 15px;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #666;
+        }
+
+        code {
+            background: #f3f4f6;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'SF Mono', Monaco, monospace;
+            font-size: 14px;
+        }
+
+        .charge-list {
+            font-family: monospace;
+            font-size: 13px;
+            line-height: 1.8;
         }
 
         .charge {
-            background: #ff0000;
-            color: #fff;
-            padding: 2px 8px;
-            margin: 2px 0;
+            color: #dc2626;
             opacity: 0;
-            animation: appear 0.2s forwards;
+            animation: fadeIn 0.3s forwards;
         }
 
-        @keyframes appear {
+        @keyframes fadeIn {
             to { opacity: 1; }
         }
 
-        .blocked {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: #0f0;
-            color: #000;
-            padding: 20px;
-            font-weight: bold;
-            font-size: 24px;
+        .protection-message {
+            background: #16a34a;
+            color: white;
+            padding: 10px;
+            border-radius: 4px;
+            text-align: center;
+            font-weight: 600;
             display: none;
         }
 
-        .blocked.show {
+        .protection-message.show {
             display: block;
         }
 
-        pre {
-            color: #0f0;
-            margin: 20px 0;
+        .install {
+            background: #f8f8f8;
+            border: 1px solid #e5e5e5;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 40px 0;
         }
 
-        .command {
-            color: #fff;
-        }
-
-        .error {
-            color: #ff0000;
-        }
-
-        .success {
-            color: #0f0;
+        .install code {
+            display: block;
+            margin: 10px 0;
+            padding: 10px;
+            background: white;
+            border: 1px solid #e5e5e5;
         }
 
         a {
-            color: #0f0;
+            color: #2563eb;
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 40px 0;
+        }
+
+        .feature {
+            padding: 15px;
+        }
+
+        .feature h3 {
+            font-size: 16px;
+            margin-bottom: 5px;
+        }
+
+        .feature p {
+            color: #666;
+            font-size: 14px;
+        }
+
+        @media (max-width: 768px) {
+            .demo-container {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="terminal">
-        <h1>[CRITICAL] YOUR AI AGENT IS DESTROYING PRODUCTION RIGHT NOW</h1>
-        
-        <pre>
-<span class="command">$ tail -f /var/log/stripe/charges.log</span>
+    <header>
+        <div style="max-width: 900px; margin: 0 auto;">
+            <strong>AgentCorrect</strong>
+        </div>
+    </header>
 
-2025-08-26 17:23:01 [INFO] Charge created: $99.00 customer_12345 
-2025-08-26 17:23:01 [INFO] Charge created: $99.00 customer_12345 (DUPLICATE)
-2025-08-26 17:23:02 [INFO] Charge created: $99.00 customer_12345 (DUPLICATE)
-2025-08-26 17:23:02 [INFO] Charge created: $99.00 customer_12345 (DUPLICATE)
-2025-08-26 17:23:03 [INFO] Charge created: $99.00 customer_12345 (DUPLICATE)
-<span class="error">2025-08-26 17:23:03 [ERROR] Customer complaint received: "WTF 5 CHARGES???"</span>
-2025-08-26 17:23:04 [INFO] Charge created: $99.00 customer_12345 (DUPLICATE)
-2025-08-26 17:23:04 [INFO] Charge created: $99.00 customer_12345 (DUPLICATE)
-...continuing...
-        </pre>
+    <div class="container">
+        <h1>Your AI agent lacks payment idempotency</h1>
+        <p class="subtitle">When network timeouts occur, customers get charged multiple times. AgentCorrect catches this before production.</p>
 
-        <div class="demo" id="disaster">
-            <div class="charges" id="charges"></div>
-            <div class="blocked" id="blocked">DEPLOYMENT BLOCKED</div>
+        <div class="problem">
+            <strong>The Problem:</strong> AI agents retry on failure. Without idempotency keys, each retry creates a new charge.
         </div>
 
-        <pre>
-<span class="command">$ cat ai_agent.py</span>
+        <div class="demo-container">
+            <div class="demo-box">
+                <div class="demo-title">Without Protection</div>
+                <div class="example">
+# AI agent code
+stripe.Charge.create(
+    amount=9900,
+    currency='usd',
+    customer=customer_id
+)
+# Missing: idempotency_key
+                </div>
+                <div class="charge-list" id="charges">
+                    <div style="margin-top: 20px; font-weight: 600;">Result on network timeout:</div>
+                </div>
+            </div>
 
-def charge_customer(amount):
-    stripe.Charge.create(
-        amount=amount,
-        currency='usd',
-        customer=customer_id
-        <span class="error"># Missing: idempotency_key=unique_key</span>
-    )
-    # AI agent retries on network timeout
-    # Customer gets charged every retry
-    # Your startup gets sued
-        </pre>
+            <div class="demo-box">
+                <div class="demo-title">With AgentCorrect</div>
+                <div class="example">
+$ agentcorrect analyze .
 
-        <pre>
-<span class="command">$ pip install agentcorrect</span>
-<span class="command">$ agentcorrect analyze .</span>
+[ERROR] Missing idempotency_key
+Line 47: stripe.Charge.create()
 
-Scanning codebase...
-<span class="error">[CRITICAL] stripe.Charge.create() missing idempotency_key at line 47</span>
-<span class="error">[CRITICAL] DELETE FROM users missing WHERE clause at line 892</span>
-<span class="error">[CRITICAL] redis.flushall() detected at line 1247</span>
+Exit code: 2
+                </div>
+                <div class="protection-message" id="protected">
+                    Deployment Blocked - Fix Required
+                </div>
+            </div>
+        </div>
 
-<span class="success">Generating runtime policies...</span>
-✓ payment_idempotency.rego
-✓ sql_safety.rego  
-✓ cache_protection.rego
+        <div class="solution">
+            <strong>The Solution:</strong> AgentCorrect scans your code before deployment and blocks if payment APIs lack idempotency.
+        </div>
 
-<span class="error">Exit code: 2 (CI/CD pipeline blocked)</span>
-        </pre>
+        <h2 style="margin: 40px 0 20px; font-size: 24px;">What it catches</h2>
+        
+        <div class="features">
+            <div class="feature">
+                <h3>Payment Disasters</h3>
+                <p>Missing idempotency keys for Stripe, PayPal, Square, and 25+ providers</p>
+            </div>
+            <div class="feature">
+                <h3>SQL Catastrophes</h3>
+                <p>DELETE without WHERE, TRUNCATE, DROP TABLE before they wipe data</p>
+            </div>
+            <div class="feature">
+                <h3>Infrastructure Wipes</h3>
+                <p>Redis FLUSHALL, MongoDB drops, S3 bucket deletions</p>
+            </div>
+        </div>
 
-        <pre>
-<span class="command">$ git push origin main</span>
-<span class="error">remote: AgentCorrect check failed. Deployment blocked.</span>
-<span class="error">remote: Fix critical issues before deploying.</span>
-error: failed to push some refs
-        </pre>
-
-        <p style="margin-top: 40px; color: #fff;">
-            AgentCorrect catches these before production. Not after.
-        </p>
-
-        <p style="margin-top: 20px;">
-            <a href="https://github.com/ishaan1345/agentcorrect">github.com/ishaan1345/agentcorrect</a>
-        </p>
-
-        <pre style="margin-top: 40px; color: #666;">
-# What it actually does:
-- Scans AI agent code for payment provider API calls
-- Checks for missing idempotency keys (Stripe, Square, PayPal, etc)
-- Detects SQL disasters (DELETE/UPDATE without WHERE)
-- Catches infrastructure wipes (Redis FLUSHALL, MongoDB drops)
-- Exits with code 2 to block CI/CD pipelines
-- Generates OPA/Rego policies for runtime enforcement
-- Zero false positives (checks against vendor specs)
-
-# Install:
-pip install agentcorrect
-
-# Run:
-agentcorrect analyze .
-
-# In CI/CD:
-- run: agentcorrect analyze .
+        <div class="install">
+            <strong>Installation</strong>
+            <code>pip install agentcorrect</code>
+            
+            <strong>Usage</strong>
+            <code>agentcorrect analyze .</code>
+            
+            <strong>CI/CD Integration</strong>
+            <code>
+- name: Check for disasters<br>
+  run: agentcorrect analyze .<br>
   continue-on-error: false
-        </pre>
+            </code>
+        </div>
+
+        <p>
+            <a href="https://github.com/ishaan1345/agentcorrect">View on GitHub</a> • 
+            <a href="https://pypi.org/project/agentcorrect/">PyPI Package</a> • 
+            <a href="https://github.com/ishaan1345/agentcorrect/blob/main/README.md">Documentation</a>
+        </p>
+
+        <p style="margin-top: 40px; color: #666; font-size: 14px;">
+            Built for teams using AI agents in production. Zero false positives - checks against official vendor specifications.
+        </p>
     </div>
 
     <script>
-        // Show charges accumulating
-        let chargeCount = 0;
+        // Simple demo showing charges accumulating
         const charges = document.getElementById('charges');
-        const blocked = document.getElementById('blocked');
+        const protected = document.getElementById('protected');
+        let count = 0;
         
-        function addCharge() {
-            if (chargeCount < 47) {
-                const charge = document.createElement('div');
-                charge.className = 'charge';
-                charge.style.animationDelay = `${chargeCount * 0.05}s`;
-                charge.textContent = `CHARGE #${chargeCount + 1}: $99.00`;
-                charges.appendChild(charge);
-                chargeCount++;
-                
-                if (chargeCount === 15) {
-                    blocked.classList.add('show');
-                }
-            }
-        }
-        
-        // Start after 1 second
         setTimeout(() => {
             const interval = setInterval(() => {
-                addCharge();
-                if (chargeCount >= 47) {
+                if (count < 5) {
+                    const charge = document.createElement('div');
+                    charge.className = 'charge';
+                    charge.style.animationDelay = `${count * 0.1}s`;
+                    charge.innerHTML = `Attempt ${count + 1}: Charged $99.00 ✓`;
+                    charges.appendChild(charge);
+                    count++;
+                } else {
                     clearInterval(interval);
+                    protected.classList.add('show');
                 }
-            }, 100);
+            }, 600);
         }, 1000);
     </script>
 </body>
