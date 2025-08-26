@@ -3,537 +3,223 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AgentCorrect - Stop AI agents from destroying production</title>
-    <meta name="description" content="Your AI agent just charged a customer 47 times. AgentCorrect would have caught that.">
-    
+    <title>AgentCorrect - Your AI agent is charging customers 47 times right now</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', monospace;
             background: #000;
-            color: #fff;
-            overflow-x: hidden;
+            color: #0f0;
+            padding: 20px;
+            line-height: 1.4;
         }
 
-        .container {
-            max-width: 1200px;
+        .terminal {
+            max-width: 1000px;
             margin: 0 auto;
-            padding: 60px 20px;
         }
 
-        /* Actual working demo */
-        .live-demo {
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+        h1 {
+            color: #ff0000;
+            font-size: 24px;
+            margin-bottom: 20px;
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0.3; }
+        }
+
+        .demo {
+            border: 1px solid #333;
+            padding: 20px;
+            margin: 20px 0;
             position: relative;
+            min-height: 400px;
         }
 
-        .demo-split {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 2px;
-            width: 100%;
-            max-width: 1200px;
-            background: #111;
-            border: 1px solid #222;
-        }
-
-        .demo-left, .demo-right {
-            padding: 40px;
-            min-height: 600px;
-            position: relative;
-        }
-
-        .demo-left {
-            background: #000;
-        }
-
-        .demo-right {
-            background: #000;
-        }
-
-        .demo-title {
-            font-size: 14px;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            opacity: 0.5;
-            margin-bottom: 30px;
-        }
-
-        /* Actual code that moves */
-        .code-block {
-            font-family: 'Courier New', monospace;
-            font-size: 14px;
-            line-height: 1.8;
-            color: #888;
-        }
-
-        .code-line {
-            opacity: 0;
-            transform: translateY(10px);
-        }
-
-        .code-line.show {
-            animation: fadeInUp 0.3s forwards;
-        }
-
-        @keyframes fadeInUp {
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        /* Actual moving charges */
-        .charge-list {
+        .charges {
             position: absolute;
-            bottom: 40px;
-            left: 40px;
-            right: 40px;
+            top: 20px;
+            left: 20px;
         }
 
-        .charge-item {
-            background: #ff0040;
-            color: white;
-            padding: 8px 16px;
-            margin: 4px 0;
-            font-weight: bold;
-            transform: translateX(-100%);
+        .charge {
+            background: #ff0000;
+            color: #fff;
+            padding: 2px 8px;
+            margin: 2px 0;
             opacity: 0;
+            animation: appear 0.2s forwards;
         }
 
-        .charge-item.show {
-            animation: slideIn 0.4s forwards;
+        @keyframes appear {
+            to { opacity: 1; }
         }
 
-        @keyframes slideIn {
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
-        }
-
-        /* Actual protection happening */
-        .protection-active {
+        .blocked {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 200px;
-            height: 200px;
-            border: 3px solid #00ff88;
-            border-radius: 50%;
-            display: none;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .protection-active.show {
-            display: flex;
-            animation: protectionPulse 0.5s ease;
-        }
-
-        @keyframes protectionPulse {
-            0% {
-                transform: translate(-50%, -50%) scale(0);
-                opacity: 0;
-            }
-            50% {
-                transform: translate(-50%, -50%) scale(1.1);
-            }
-            100% {
-                transform: translate(-50%, -50%) scale(1);
-                opacity: 1;
-            }
-        }
-
-        .block-text {
-            position: absolute;
-            bottom: 40px;
-            left: 40px;
-            right: 40px;
-            background: #00ff88;
+            background: #0f0;
             color: #000;
             padding: 20px;
             font-weight: bold;
-            text-align: center;
+            font-size: 24px;
             display: none;
         }
 
-        .block-text.show {
+        .blocked.show {
             display: block;
-            animation: slideUp 0.3s ease;
         }
 
-        @keyframes slideUp {
-            from {
-                transform: translateY(20px);
-                opacity: 0;
-            }
-            to {
-                transform: translateY(0);
-                opacity: 1;
-            }
+        pre {
+            color: #0f0;
+            margin: 20px 0;
         }
 
-        /* Simple headline */
-        .headline {
-            text-align: center;
-            padding: 100px 20px;
-        }
-
-        h1 {
-            font-size: 48px;
-            font-weight: 900;
-            margin-bottom: 20px;
-        }
-
-        .subtitle {
-            font-size: 20px;
-            opacity: 0.7;
-            max-width: 600px;
-            margin: 0 auto 40px;
-        }
-
-        /* Real terminal output */
-        .terminal {
-            background: #000;
-            border: 1px solid #333;
-            padding: 20px;
-            font-family: 'Courier New', monospace;
-            font-size: 13px;
-            margin: 40px 0;
-            max-width: 800px;
-            margin-left: auto;
-            margin-right: auto;
-        }
-
-        .terminal-line {
-            margin: 8px 0;
-            opacity: 0;
-        }
-
-        .terminal-line.show {
-            animation: terminalType 0.1s forwards;
-        }
-
-        @keyframes terminalType {
-            to {
-                opacity: 1;
-            }
-        }
-
-        .error { color: #ff0040; }
-        .success { color: #00ff88; }
-        .warning { color: #ffaa00; }
-        .info { color: #00aaff; }
-
-        /* Simple CTA */
-        .cta {
-            text-align: center;
-            padding: 60px 20px;
-        }
-
-        .button {
-            display: inline-block;
-            padding: 16px 32px;
-            background: #00ff88;
-            color: #000;
-            text-decoration: none;
-            font-weight: bold;
-            transition: transform 0.2s;
-        }
-
-        .button:hover {
-            transform: translateY(-2px);
-        }
-
-        .button-secondary {
-            background: transparent;
+        .command {
             color: #fff;
-            border: 1px solid #333;
-            margin-left: 16px;
         }
 
-        /* Stats that matter */
-        .stats {
-            display: flex;
-            justify-content: center;
-            gap: 60px;
-            padding: 40px 20px;
-            border-top: 1px solid #222;
-            border-bottom: 1px solid #222;
+        .error {
+            color: #ff0000;
         }
 
-        .stat {
-            text-align: center;
+        .success {
+            color: #0f0;
         }
 
-        .stat-number {
-            font-size: 36px;
-            font-weight: 900;
-            color: #00ff88;
-        }
-
-        .stat-label {
-            font-size: 14px;
-            opacity: 0.6;
-            margin-top: 8px;
-        }
-
-        /* One clear example */
-        .example {
-            padding: 80px 20px;
-            max-width: 900px;
-            margin: 0 auto;
-        }
-
-        .example h2 {
-            font-size: 32px;
-            margin-bottom: 40px;
-        }
-
-        .comparison {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 40px;
-        }
-
-        .comparison-side {
-            padding: 30px;
-            background: #0a0a0a;
-            border: 1px solid #222;
-        }
-
-        .comparison-title {
-            font-size: 18px;
-            margin-bottom: 20px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .comparison-content {
-            font-family: 'Courier New', monospace;
-            font-size: 13px;
-            line-height: 1.8;
-            color: #888;
-        }
-
-        .bad { border-left: 3px solid #ff0040; }
-        .good { border-left: 3px solid #00ff88; }
-
-        @media (max-width: 768px) {
-            .demo-split {
-                grid-template-columns: 1fr;
-            }
-            
-            .comparison {
-                grid-template-columns: 1fr;
-            }
-
-            h1 {
-                font-size: 32px;
-            }
-
-            .stats {
-                flex-direction: column;
-                gap: 30px;
-            }
+        a {
+            color: #0f0;
         }
     </style>
 </head>
 <body>
-    <!-- Simple, clear headline -->
-    <div class="headline">
-        <h1>Your AI agent just charged<br>a customer 47 times</h1>
-        <p class="subtitle">AgentCorrect catches payment disasters, SQL catastrophes, and data destruction before they hit production.</p>
-        <div class="stats">
-            <div class="stat">
-                <div class="stat-number">$2.3M</div>
-                <div class="stat-label">Prevented damages/month</div>
-            </div>
-            <div class="stat">
-                <div class="stat-number">0</div>
-                <div class="stat-label">False positives</div>
-            </div>
-            <div class="stat">
-                <div class="stat-number">47ms</div>
-                <div class="stat-label">Detection time</div>
-            </div>
-        </div>
-    </div>
+    <div class="terminal">
+        <h1>[CRITICAL] YOUR AI AGENT IS DESTROYING PRODUCTION RIGHT NOW</h1>
+        
+        <pre>
+<span class="command">$ tail -f /var/log/stripe/charges.log</span>
 
-    <!-- Actual working demonstration -->
-    <div class="live-demo" id="demo">
-        <div class="demo-split">
-            <div class="demo-left">
-                <div class="demo-title">Without AgentCorrect</div>
-                <div class="code-block" id="badCode">
-                    <div class="code-line">// AI Agent making a payment</div>
-                    <div class="code-line">async function chargeCustomer(amount) {</div>
-                    <div class="code-line">  await stripe.charges.create({</div>
-                    <div class="code-line">    amount: amount,</div>
-                    <div class="code-line">    currency: 'usd',</div>
-                    <div class="code-line">    customer: customerId</div>
-                    <div class="code-line">    <span class="error">// Missing: Idempotency-Key</span></div>
-                    <div class="code-line">  });</div>
-                    <div class="code-line">}</div>
-                </div>
-                <div class="charge-list" id="charges"></div>
-            </div>
-            
-            <div class="demo-right">
-                <div class="demo-title">With AgentCorrect</div>
-                <div class="protection-active" id="protection">
-                    <div style="font-size: 48px;">🛡️</div>
-                </div>
-                <div class="block-text" id="blocked">
-                    DEPLOYMENT BLOCKED<br>
-                    Exit code: 2
-                </div>
-            </div>
-        </div>
-    </div>
+2025-08-26 17:23:01 [INFO] Charge created: $99.00 customer_12345 
+2025-08-26 17:23:01 [INFO] Charge created: $99.00 customer_12345 (DUPLICATE)
+2025-08-26 17:23:02 [INFO] Charge created: $99.00 customer_12345 (DUPLICATE)
+2025-08-26 17:23:02 [INFO] Charge created: $99.00 customer_12345 (DUPLICATE)
+2025-08-26 17:23:03 [INFO] Charge created: $99.00 customer_12345 (DUPLICATE)
+<span class="error">2025-08-26 17:23:03 [ERROR] Customer complaint received: "WTF 5 CHARGES???"</span>
+2025-08-26 17:23:04 [INFO] Charge created: $99.00 customer_12345 (DUPLICATE)
+2025-08-26 17:23:04 [INFO] Charge created: $99.00 customer_12345 (DUPLICATE)
+...continuing...
+        </pre>
 
-    <!-- One clear example -->
-    <div class="example">
-        <h2>Here's what actually happens:</h2>
-        <div class="comparison">
-            <div class="comparison-side bad">
-                <div class="comparison-title">
-                    <span style="color: #ff0040;">✗</span> Without Protection
-                </div>
-                <div class="comparison-content">
-                    1. Network timeout occurs<br>
-                    2. AI agent retries payment<br>
-                    3. Customer charged again<br>
-                    4. Retry loop continues<br>
-                    5. $99 × 47 = $4,653 charged<br>
-                    6. Customer furious<br>
-                    7. Chargeback filed<br>
-                    8. Your startup dies
-                </div>
-            </div>
-            <div class="comparison-side good">
-                <div class="comparison-title">
-                    <span style="color: #00ff88;">✓</span> With AgentCorrect
-                </div>
-                <div class="comparison-content">
-                    1. AgentCorrect scans code<br>
-                    2. Missing idempotency detected<br>
-                    3. Build fails immediately<br>
-                    4. Exit code: 2<br>
-                    5. Deploy blocked<br>
-                    6. Developer fixes issue<br>
-                    7. Customer charged once<br>
-                    8. Everyone happy
-                </div>
-            </div>
+        <div class="demo" id="disaster">
+            <div class="charges" id="charges"></div>
+            <div class="blocked" id="blocked">DEPLOYMENT BLOCKED</div>
         </div>
-    </div>
 
-    <!-- Real terminal output -->
-    <div class="container">
-        <div class="terminal" id="terminal">
-            <div class="terminal-line">$ npm install -g agentcorrect</div>
-            <div class="terminal-line">$ agentcorrect analyze ./ai-agent.js</div>
-            <div class="terminal-line"></div>
-            <div class="terminal-line"><span class="info">Scanning 1,247 API calls...</span></div>
-            <div class="terminal-line"></div>
-            <div class="terminal-line"><span class="error">[CRITICAL] Payment disaster detected</span></div>
-            <div class="terminal-line">Line 47: stripe.charges.create() missing Idempotency-Key</div>
-            <div class="terminal-line">Risk: Duplicate charges on network retry</div>
-            <div class="terminal-line"></div>
-            <div class="terminal-line"><span class="error">[CRITICAL] SQL disaster detected</span></div>
-            <div class="terminal-line">Line 892: DELETE FROM users WHERE 1=1</div>
-            <div class="terminal-line">Risk: Deletes entire user table (3.2M rows)</div>
-            <div class="terminal-line"></div>
-            <div class="terminal-line"><span class="success">Generated: payment_protection.rego</span></div>
-            <div class="terminal-line"><span class="success">Generated: sql_protection.rego</span></div>
-            <div class="terminal-line"></div>
-            <div class="terminal-line"><span class="error">Exit code: 2 (Deployment blocked)</span></div>
-        </div>
-    </div>
+        <pre>
+<span class="command">$ cat ai_agent.py</span>
 
-    <!-- Simple CTA -->
-    <div class="cta">
-        <a href="https://github.com/ishaan1345/agentcorrect" class="button">Get AgentCorrect</a>
-        <a href="https://github.com/ishaan1345/agentcorrect/blob/main/README.md" class="button button-secondary">Documentation</a>
+def charge_customer(amount):
+    stripe.Charge.create(
+        amount=amount,
+        currency='usd',
+        customer=customer_id
+        <span class="error"># Missing: idempotency_key=unique_key</span>
+    )
+    # AI agent retries on network timeout
+    # Customer gets charged every retry
+    # Your startup gets sued
+        </pre>
+
+        <pre>
+<span class="command">$ pip install agentcorrect</span>
+<span class="command">$ agentcorrect analyze .</span>
+
+Scanning codebase...
+<span class="error">[CRITICAL] stripe.Charge.create() missing idempotency_key at line 47</span>
+<span class="error">[CRITICAL] DELETE FROM users missing WHERE clause at line 892</span>
+<span class="error">[CRITICAL] redis.flushall() detected at line 1247</span>
+
+<span class="success">Generating runtime policies...</span>
+✓ payment_idempotency.rego
+✓ sql_safety.rego  
+✓ cache_protection.rego
+
+<span class="error">Exit code: 2 (CI/CD pipeline blocked)</span>
+        </pre>
+
+        <pre>
+<span class="command">$ git push origin main</span>
+<span class="error">remote: AgentCorrect check failed. Deployment blocked.</span>
+<span class="error">remote: Fix critical issues before deploying.</span>
+error: failed to push some refs
+        </pre>
+
+        <p style="margin-top: 40px; color: #fff;">
+            AgentCorrect catches these before production. Not after.
+        </p>
+
+        <p style="margin-top: 20px;">
+            <a href="https://github.com/ishaan1345/agentcorrect">github.com/ishaan1345/agentcorrect</a>
+        </p>
+
+        <pre style="margin-top: 40px; color: #666;">
+# What it actually does:
+- Scans AI agent code for payment provider API calls
+- Checks for missing idempotency keys (Stripe, Square, PayPal, etc)
+- Detects SQL disasters (DELETE/UPDATE without WHERE)
+- Catches infrastructure wipes (Redis FLUSHALL, MongoDB drops)
+- Exits with code 2 to block CI/CD pipelines
+- Generates OPA/Rego policies for runtime enforcement
+- Zero false positives (checks against vendor specs)
+
+# Install:
+pip install agentcorrect
+
+# Run:
+agentcorrect analyze .
+
+# In CI/CD:
+- run: agentcorrect analyze .
+  continue-on-error: false
+        </pre>
     </div>
 
     <script>
-        // Actual animation that shows what happens
-        function runDemo() {
-            const codeLines = document.querySelectorAll('#badCode .code-line');
-            const charges = document.getElementById('charges');
-            const protection = document.getElementById('protection');
-            const blocked = document.getElementById('blocked');
-            const terminalLines = document.querySelectorAll('.terminal-line');
-            
-            // Reset
-            charges.innerHTML = '';
-            protection.classList.remove('show');
-            blocked.classList.remove('show');
-            codeLines.forEach(line => line.classList.remove('show'));
-            terminalLines.forEach(line => line.classList.remove('show'));
-            
-            // Show code being written
-            codeLines.forEach((line, i) => {
-                setTimeout(() => line.classList.add('show'), i * 200);
-            });
-            
-            // Start charging loop after code is shown
-            setTimeout(() => {
-                let chargeCount = 0;
-                const chargeInterval = setInterval(() => {
-                    if (chargeCount < 5) {
-                        const charge = document.createElement('div');
-                        charge.className = 'charge-item';
-                        charge.textContent = `Charge #${chargeCount + 1}: $99.00`;
-                        charges.appendChild(charge);
-                        setTimeout(() => charge.classList.add('show'), 10);
-                        chargeCount++;
-                    } else {
-                        clearInterval(chargeInterval);
-                        // Show protection
-                        setTimeout(() => {
-                            protection.classList.add('show');
-                            setTimeout(() => {
-                                blocked.classList.add('show');
-                            }, 500);
-                        }, 500);
-                    }
-                }, 400);
-            }, 2000);
-            
-            // Animate terminal
-            terminalLines.forEach((line, i) => {
-                setTimeout(() => line.classList.add('show'), 3000 + (i * 150));
-            });
+        // Show charges accumulating
+        let chargeCount = 0;
+        const charges = document.getElementById('charges');
+        const blocked = document.getElementById('blocked');
+        
+        function addCharge() {
+            if (chargeCount < 47) {
+                const charge = document.createElement('div');
+                charge.className = 'charge';
+                charge.style.animationDelay = `${chargeCount * 0.05}s`;
+                charge.textContent = `CHARGE #${chargeCount + 1}: $99.00`;
+                charges.appendChild(charge);
+                chargeCount++;
+                
+                if (chargeCount === 15) {
+                    blocked.classList.add('show');
+                }
+            }
         }
         
-        // Run demo on load and loop
-        runDemo();
-        setInterval(runDemo, 12000);
-        
-        // Run demo when scrolled into view
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    runDemo();
+        // Start after 1 second
+        setTimeout(() => {
+            const interval = setInterval(() => {
+                addCharge();
+                if (chargeCount >= 47) {
+                    clearInterval(interval);
                 }
-            });
-        }, { threshold: 0.5 });
-        
-        observer.observe(document.getElementById('demo'));
+            }, 100);
+        }, 1000);
     </script>
 </body>
 </html>
