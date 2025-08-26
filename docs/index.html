@@ -3,1292 +3,933 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AgentCorrect — Ship AI Agents Safely to Production</title>
+    <title>AgentCorrect — CI/CD Guardrails for AI Agents</title>
     
     <!-- Meta Tags -->
-    <meta name="description" content="Stop AI agents from charging customers multiple times. AgentCorrect blocks deployments when your agent code would cause payment disasters or delete data. Zero data storage, 100% deterministic.">
-    <meta name="keywords" content="AI agent safety, duplicate charges, stripe idempotency, OWASP compliance, CI/CD guardrails, langfuse, opentelemetry, otel, galileo, sev0">
+    <meta name="description" content="Prevent AI agents from charging customers twice or deleting production data. AgentCorrect analyzes traces and blocks deployments with payment duplicates or SQL disasters.">
+    <meta name="keywords" content="AI agent safety, CI/CD guardrails, stripe idempotency, payment duplicates, SQL safety, langfuse, opentelemetry, otel, galileo, sev0, agent reliability">
+    
+    <!-- Schema.org markup -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "AgentCorrect",
+        "applicationCategory": "DeveloperApplication",
+        "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD"
+        },
+        "description": "CI/CD guardrails for AI agents that prevent payment duplicates and data destruction",
+        "url": "https://agentcorrect.com",
+        "author": {
+            "@type": "Organization",
+            "name": "AgentCorrect"
+        },
+        "operatingSystem": "Linux, macOS, Windows",
+        "softwareVersion": "1.0.0"
+    }
+    </script>
     
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+        
+        :root {
+            --white: #ffffff;
+            --black: #000000;
+            --gray-50: #f9fafb;
+            --gray-100: #f3f4f6;
+            --gray-200: #e5e7eb;
+            --gray-300: #d1d5db;
+            --gray-400: #9ca3af;
+            --gray-500: #6b7280;
+            --gray-600: #4b5563;
+            --gray-700: #374151;
+            --gray-800: #1f2937;
+            --gray-900: #111827;
+            
+            --blue-500: #3b82f6;
+            --blue-600: #2563eb;
+            --green-500: #10b981;
+            --green-600: #059669;
+            --red-500: #ef4444;
+            --red-600: #dc2626;
+            --yellow-500: #eab308;
+            
+            --font-sans: 'Inter', -apple-system, system-ui, sans-serif;
+            --font-mono: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+        }
         
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
-
-        :root {
-            --bg-primary: #0a0a0a;
-            --bg-secondary: #111111;
-            --text-primary: #fafafa;
-            --text-muted: #8b8b8b;
-            --accent-primary: #7c3aed;  /* Rich purple */
-            --accent-secondary: #ec4899; /* Vibrant pink */
-            --accent-tertiary: #06b6d4;  /* Cyan */
-            --accent-success: #10b981;   /* Emerald */
-            --accent-danger: #ef4444;    /* Red */
-            --accent-warning: #f59e0b;   /* Amber */
-            --border: rgba(255, 255, 255, 0.08);
-            --glow-primary: 0 0 60px rgba(124, 58, 237, 0.6);
-            --glow-secondary: 0 0 60px rgba(236, 72, 153, 0.6);
-            --gradient-primary: linear-gradient(135deg, #7c3aed, #ec4899, #06b6d4);
-            --gradient-mesh: radial-gradient(at 20% 80%, rgba(124, 58, 237, 0.15) 0%, transparent 50%),
-                           radial-gradient(at 80% 20%, rgba(236, 72, 153, 0.15) 0%, transparent 50%),
-                           radial-gradient(at 40% 60%, rgba(6, 182, 212, 0.15) 0%, transparent 50%);
-        }
-
+        
         body {
-            font-family: 'Inter', -apple-system, system-ui, sans-serif;
-            background: var(--bg-primary);
-            background-image: var(--gradient-mesh);
-            color: var(--text-primary);
-            overflow-x: hidden;
-            position: relative;
+            font-family: var(--font-sans);
+            background: var(--white);
+            color: var(--gray-900);
             line-height: 1.6;
-        }
-
-        /* Animated Grid Background */
-        .grid-container {
-            position: fixed;
-            inset: 0;
-            z-index: -2;
-            opacity: 0.3;
-        }
-
-        .grid {
-            width: 100%;
-            height: 100%;
-            background-image: 
-                linear-gradient(rgba(124, 58, 237, 0.08) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(124, 58, 237, 0.08) 1px, transparent 1px);
-            background-size: 60px 60px;
-            animation: grid-move 15s linear infinite;
-            position: relative;
+            -webkit-font-smoothing: antialiased;
         }
         
-        .grid::after {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: radial-gradient(circle at 50% 50%, transparent, var(--bg-primary) 70%);
-        }
-
-        @keyframes grid-move {
-            0% { transform: translate(0, 0); }
-            100% { transform: translate(50px, 50px); }
-        }
-
-        /* Gradient Orbs */
-        .gradient-orb {
-            position: fixed;
-            border-radius: 50%;
-            filter: blur(100px);
-            opacity: 0.5;
-            z-index: -1;
-            animation: float 20s infinite ease-in-out;
-        }
-
-        .orb-1 {
-            width: 800px;
-            height: 800px;
-            background: radial-gradient(circle, var(--accent-primary), transparent);
-            top: -400px;
-            left: -400px;
-            animation-delay: 0s;
-            opacity: 0.3;
-        }
-
-        .orb-2 {
-            width: 600px;
-            height: 600px;
-            background: radial-gradient(circle, var(--accent-secondary), transparent);
-            bottom: -300px;
-            right: -300px;
-            animation-delay: 5s;
-            opacity: 0.3;
-        }
-
-        .orb-3 {
-            width: 700px;
-            height: 700px;
-            background: radial-gradient(circle, var(--accent-tertiary), transparent);
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            animation-delay: 10s;
-            opacity: 0.3;
-        }
-
-        @keyframes float {
-            0%, 100% { transform: translate(0, 0) scale(1); }
-            33% { transform: translate(30px, -30px) scale(1.1); }
-            66% { transform: translate(-30px, 30px) scale(0.9); }
-        }
-
-        /* Command Bar */
-        .command-bar {
+        /* Header */
+        .header {
             position: fixed;
             top: 0;
             left: 0;
             right: 0;
-            background: rgba(10, 10, 10, 0.7);
-            backdrop-filter: blur(24px) saturate(200%);
-            -webkit-backdrop-filter: blur(24px) saturate(200%);
-            border-bottom: 1px solid var(--border);
-            z-index: 1000;
-            padding: 1rem 0;
-            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(8px);
+            border-bottom: 1px solid var(--gray-200);
+            z-index: 100;
         }
-
-        .command-content {
-            max-width: 1400px;
+        
+        .header-content {
+            max-width: 1200px;
             margin: 0 auto;
-            padding: 0 2rem;
+            padding: 1rem 2rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            gap: 2rem;
         }
-
-        .command-install {
+        
+        .logo {
+            font-weight: 700;
+            font-size: 1.25rem;
+            color: var(--gray-900);
+            text-decoration: none;
+        }
+        
+        .nav {
             display: flex;
+            gap: 2rem;
             align-items: center;
-            gap: 1rem;
-            background: linear-gradient(135deg, rgba(124, 58, 237, 0.1), rgba(236, 72, 153, 0.1));
-            border: 1px solid rgba(124, 58, 237, 0.3);
-            padding: 0.6rem 1.2rem;
-            border-radius: 12px;
-            font-family: 'JetBrains Mono', 'SF Mono', 'Monaco', monospace;
-            color: var(--text-primary);
+        }
+        
+        .nav a {
+            color: var(--gray-600);
+            text-decoration: none;
             font-size: 0.95rem;
-            font-weight: 500;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .command-install::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: var(--gradient-primary);
-            opacity: 0;
-            transition: opacity 0.3s;
-        }
-
-        .command-install:hover {
-            transform: translateY(-2px) scale(1.02);
-            box-shadow: var(--glow-primary);
-            border-color: var(--accent-primary);
-        }
-        
-        .command-install:hover::before {
-            opacity: 0.1;
-        }
-        
-        .command-install > * {
-            position: relative;
-            z-index: 1;
-        }
-
-        .command-prompt {
-            color: var(--text-muted);
-        }
-
-        .copy-btn {
-            background: transparent;
-            border: 1px solid var(--border);
-            color: var(--text-muted);
-            padding: 0.3rem 0.8rem;
-            border-radius: 6px;
-            font-size: 0.8rem;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .copy-btn:hover {
-            border-color: var(--accent-primary);
-            color: var(--accent-primary);
-            background: rgba(124, 58, 237, 0.1);
-        }
-
-        .nav-links {
-            display: flex;
-            gap: 2rem;
-            align-items: center;
-        }
-
-        .nav-links a {
-            color: var(--text-muted);
-            text-decoration: none;
             transition: color 0.2s;
-            font-size: 0.9rem;
         }
-
-        .nav-links a:hover {
-            color: var(--text-primary);
+        
+        .nav a:hover {
+            color: var(--gray-900);
         }
-
-        .github-btn {
-            background: linear-gradient(135deg, #1a1a1a, #2a2a2a);
-            color: var(--text-primary);
-            padding: 0.5rem 1.2rem;
-            border-radius: 8px;
+        
+        .github-link {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: var(--gray-900);
+            color: var(--white);
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
             text-decoration: none;
-            border: 1px solid var(--border);
-            transition: all 0.3s;
+            font-size: 0.9rem;
+            transition: background 0.2s;
         }
-
-        .github-btn:hover {
-            border-color: var(--accent-primary);
-            background: linear-gradient(135deg, rgba(124, 58, 237, 0.1), rgba(236, 72, 153, 0.1));
-            transform: translateY(-2px);
+        
+        .github-link:hover {
+            background: var(--gray-800);
         }
-
+        
         /* Hero Section */
         .hero {
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
             padding: 8rem 2rem 4rem;
-            position: relative;
-        }
-
-        .hero-content {
             max-width: 1200px;
-            width: 100%;
-            text-align: center;
-        }
-
-        .incident-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(236, 72, 153, 0.1));
-            border: 1px solid rgba(239, 68, 68, 0.5);
-            padding: 0.6rem 1.4rem;
-            border-radius: 100px;
-            margin-bottom: 3rem;
-            animation: pulse-danger 2s infinite;
-            font-size: 0.9rem;
-            font-weight: 500;
-            letter-spacing: 0.025em;
-        }
-
-        @keyframes pulse-danger {
-            0%, 100% { 
-                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4),
-                           0 0 30px rgba(236, 72, 153, 0.2); 
-            }
-            50% { 
-                box-shadow: 0 0 20px 5px rgba(239, 68, 68, 0.2),
-                           0 0 40px rgba(236, 72, 153, 0.3); 
-            }
-        }
-
-        .incident-dot {
-            width: 8px;
-            height: 8px;
-            background: var(--accent-danger);
-            border-radius: 50%;
-            animation: blink 1s infinite;
-            box-shadow: 0 0 10px var(--accent-danger);
-        }
-
-        @keyframes blink {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.3; }
-        }
-
-        h1 {
-            font-size: clamp(3rem, 7vw, 5.5rem);
-            font-weight: 800;
-            line-height: 0.95;
-            letter-spacing: -0.02em;
-            margin-bottom: 1.5rem;
-            position: relative;
-        }
-
-        .glitch {
-            position: relative;
-            color: var(--text-primary);
-            animation: glitch-skew 4s infinite linear alternate-reverse;
-        }
-
-        .glitch::before,
-        .glitch::after {
-            content: attr(data-text);
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-        }
-
-        .glitch::before {
-            animation: glitch-1 0.65s infinite;
-            color: var(--accent-primary);
-            z-index: -1;
-            mix-blend-mode: screen;
-        }
-
-        .glitch::after {
-            animation: glitch-2 0.65s infinite;
-            color: var(--accent-secondary);
-            z-index: -2;
-            mix-blend-mode: screen;
-        }
-
-        @keyframes glitch-skew {
-            0% { transform: skew(0deg); }
-            20% { transform: skew(0deg); }
-            21% { transform: skew(-2deg); }
-            22% { transform: skew(0deg); }
-            60% { transform: skew(0deg); }
-            61% { transform: skew(1deg); }
-            62% { transform: skew(0deg); }
-            100% { transform: skew(0deg); }
-        }
-
-        @keyframes glitch-1 {
-            0% { clip-path: inset(40% 0 61% 0); transform: translate(0px, 0px); }
-            20% { clip-path: inset(92% 0 1% 0); transform: translate(-2px, 2px); }
-            40% { clip-path: inset(43% 0 1% 0); transform: translate(2px, -2px); }
-            60% { clip-path: inset(25% 0 58% 0); transform: translate(-1px, 1px); }
-            80% { clip-path: inset(54% 0 7% 0); transform: translate(1px, -1px); }
-            100% { clip-path: inset(58% 0 43% 0); transform: translate(0px, 0px); }
-        }
-
-        @keyframes glitch-2 {
-            0% { clip-path: inset(54% 0 7% 0); transform: translate(0px, 0px); }
-            20% { clip-path: inset(25% 0 58% 0); transform: translate(2px, -1px); }
-            40% { clip-path: inset(43% 0 1% 0); transform: translate(-2px, 2px); }
-            60% { clip-path: inset(92% 0 1% 0); transform: translate(1px, -2px); }
-            80% { clip-path: inset(40% 0 61% 0); transform: translate(-1px, 1px); }
-            100% { clip-path: inset(58% 0 43% 0); transform: translate(0px, 0px); }
-        }
-
-        .outcome-line {
-            font-size: clamp(2.5rem, 6vw, 5rem);
-            font-weight: 800;
-            background: var(--gradient-primary);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            margin-top: 0.5rem;
-            letter-spacing: -0.02em;
-            animation: gradient-shift 4s ease-in-out infinite;
-            filter: drop-shadow(0 0 30px rgba(124, 58, 237, 0.3));
-        }
-        
-        @keyframes gradient-shift {
-            0%, 100% { 
-                filter: drop-shadow(0 0 30px rgba(124, 58, 237, 0.3));
-            }
-            33% { 
-                filter: drop-shadow(0 0 30px rgba(236, 72, 153, 0.3));
-            }
-            66% { 
-                filter: drop-shadow(0 0 30px rgba(6, 182, 212, 0.3));
-            }
-        }
-
-        .subtitle {
-            font-size: 1.3rem;
-            color: var(--text-muted);
-            max-width: 700px;
-            margin: 2rem auto 3rem;
-            line-height: 1.6;
-        }
-
-        /* Privacy Badges */
-        .privacy-badges {
-            display: flex;
-            gap: 1rem;
-            justify-content: center;
-            flex-wrap: wrap;
-            margin-bottom: 4rem;
-        }
-
-        .privacy-badge {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid var(--border);
-            padding: 0.6rem 1.2rem;
-            border-radius: 100px;
-            font-size: 0.85rem;
-            color: var(--text-muted);
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            transition: all 0.3s;
-        }
-
-        .privacy-badge:hover {
-            border-color: var(--accent-primary);
-            color: var(--text-primary);
-            background: linear-gradient(135deg, rgba(124, 58, 237, 0.05), rgba(236, 72, 153, 0.05));
-            transform: translateY(-2px) scale(1.05);
-        }
-
-        /* Demo Section */
-        .demo-section {
-            padding: 8rem 2rem;
-            background: linear-gradient(180deg, transparent, rgba(124, 58, 237, 0.02), transparent);
-            position: relative;
-        }
-
-        .demo-container {
-            max-width: 1400px;
             margin: 0 auto;
         }
-
-        .demo-header {
+        
+        .hero-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4rem;
+            align-items: center;
+        }
+        
+        .hero-content h1 {
+            font-size: 3rem;
+            font-weight: 800;
+            line-height: 1.1;
+            margin-bottom: 1.5rem;
+            letter-spacing: -0.02em;
+        }
+        
+        .hero-content .subtitle {
+            font-size: 1.25rem;
+            color: var(--gray-600);
+            margin-bottom: 2rem;
+            line-height: 1.5;
+        }
+        
+        .install-command {
+            background: var(--gray-900);
+            color: var(--white);
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            font-family: var(--font-mono);
+            font-size: 0.95rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        .install-command .prompt {
+            color: var(--gray-400);
+        }
+        
+        .copy-btn {
+            background: var(--gray-700);
+            color: var(--white);
+            border: none;
+            padding: 0.25rem 0.75rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .copy-btn:hover {
+            background: var(--gray-600);
+        }
+        
+        .quick-links {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+        
+        .btn {
+            display: inline-block;
+            padding: 0.75rem 1.5rem;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        
+        .btn-primary {
+            background: var(--blue-600);
+            color: var(--white);
+        }
+        
+        .btn-primary:hover {
+            background: var(--blue-500);
+            transform: translateY(-1px);
+        }
+        
+        .btn-secondary {
+            background: var(--gray-100);
+            color: var(--gray-900);
+            border: 1px solid var(--gray-300);
+        }
+        
+        .btn-secondary:hover {
+            background: var(--gray-50);
+        }
+        
+        /* Terminal Demo */
+        .terminal {
+            background: #0a0a0a;
+            border: 1px solid var(--gray-300);
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        }
+        
+        .terminal-header {
+            background: var(--gray-100);
+            padding: 0.75rem 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            border-bottom: 1px solid var(--gray-300);
+        }
+        
+        .terminal-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+        
+        .terminal-dot.red { background: var(--red-500); }
+        .terminal-dot.yellow { background: var(--yellow-500); }
+        .terminal-dot.green { background: var(--green-500); }
+        
+        .terminal-body {
+            padding: 1.5rem;
+            font-family: var(--font-mono);
+            font-size: 0.875rem;
+            line-height: 1.6;
+            color: #f0f0f0;
+            min-height: 300px;
+        }
+        
+        .terminal-command {
+            color: #7dd3fc;
+        }
+        
+        .terminal-output {
+            color: #cbd5e1;
+            margin-top: 1rem;
+        }
+        
+        .terminal-error {
+            color: #f87171;
+            font-weight: 600;
+        }
+        
+        .terminal-success {
+            color: #86efac;
+        }
+        
+        .terminal-warning {
+            color: #fde047;
+        }
+        
+        /* Trust Section */
+        .trust-section {
+            background: var(--gray-50);
+            padding: 3rem 2rem;
+            text-align: center;
+        }
+        
+        .trust-content {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .trust-title {
+            font-size: 0.875rem;
+            color: var(--gray-500);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 2rem;
+        }
+        
+        .trust-logos {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 4rem;
+            flex-wrap: wrap;
+        }
+        
+        .trust-logo {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--gray-400);
+        }
+        
+        /* Features Section */
+        .features {
+            padding: 5rem 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .section-header {
             text-align: center;
             margin-bottom: 4rem;
         }
-
-        .section-label {
-            background: var(--gradient-primary);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            font-size: 0.95rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.15em;
-            margin-bottom: 1rem;
-        }
-
-        .section-title {
-            font-size: 3rem;
+        
+        .section-header h2 {
+            font-size: 2.5rem;
             font-weight: 800;
             margin-bottom: 1rem;
+            letter-spacing: -0.02em;
         }
-
-        .demo-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 2rem;
-            margin-bottom: 3rem;
+        
+        .section-header p {
+            font-size: 1.125rem;
+            color: var(--gray-600);
+            max-width: 600px;
+            margin: 0 auto;
         }
-
-        .demo-card {
-            background: rgba(255, 255, 255, 0.02);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 2rem;
-            position: relative;
-            overflow: hidden;
-            transition: all 0.3s;
-        }
-
-        .demo-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 3px;
-            background: var(--gradient-primary);
-            animation: scan 4s linear infinite;
-            opacity: 0.8;
-        }
-
-        @keyframes scan {
-            0% { transform: translateX(-100%); }
-            100% { transform: translateX(100%); }
-        }
-
-        .demo-card:hover {
-            transform: translateY(-8px) scale(1.02);
-            border-color: rgba(124, 58, 237, 0.4);
-            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.4),
-                       0 0 100px rgba(124, 58, 237, 0.1);
-            background: rgba(255, 255, 255, 0.03);
-        }
-
-        .demo-header-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1.5rem;
-        }
-
-        .demo-title {
-            font-size: 1.2rem;
-            font-weight: 700;
-        }
-
-        .status-badge {
-            padding: 0.3rem 0.8rem;
-            border-radius: 6px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-
-        .status-danger {
-            background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(236, 72, 153, 0.2));
-            color: #ff6b6b;
-            border: 1px solid rgba(239, 68, 68, 0.5);
-            font-weight: 600;
-        }
-
-        .status-success {
-            background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(6, 182, 212, 0.2));
-            color: var(--accent-success);
-            border: 1px solid rgba(16, 185, 129, 0.5);
-            font-weight: 600;
-        }
-
-        .code-block {
-            background: #0a0a0a;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 1.5rem;
-            font-family: 'SF Mono', monospace;
-            font-size: 0.9rem;
-            line-height: 1.6;
-            margin-bottom: 1.5rem;
-            overflow-x: auto;
-        }
-
-        .code-comment {
-            color: #444;
-        }
-
-        .code-keyword {
-            color: var(--accent-tertiary);
-        }
-
-        .code-string {
-            color: var(--accent-success);
-        }
-
-        .code-danger {
-            color: var(--accent-danger);
-        }
-
-        .output-block {
-            background: #000;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 1.5rem;
-            font-family: 'SF Mono', monospace;
-            font-size: 0.85rem;
-        }
-
-        .output-fail {
-            color: var(--accent-danger);
-            font-weight: 600;
-            text-shadow: 0 0 20px rgba(239, 68, 68, 0.5);
-        }
-
-        .output-success {
-            color: var(--accent-success);
-            text-shadow: 0 0 20px rgba(16, 185, 129, 0.5);
-        }
-
-        .output-line {
-            margin: 0.5rem 0;
-            padding-left: 1rem;
-            color: var(--text-muted);
-        }
-
-        /* Outcomes Section */
-        .outcomes-section {
-            padding: 6rem 2rem;
-            position: relative;
-        }
-
-        .outcomes-grid {
-            max-width: 1400px;
-            margin: 4rem auto 0;
+        
+        .features-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             gap: 2rem;
         }
-
-        .outcome-card {
-            background: rgba(255, 255, 255, 0.02);
-            border: 1px solid var(--border);
-            border-radius: 16px;
+        
+        .feature-card {
+            background: var(--white);
+            border: 1px solid var(--gray-200);
+            border-radius: 12px;
             padding: 2rem;
-            transition: all 0.3s;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .outcome-card::after {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle, rgba(124, 58, 237, 0.15), transparent);
-            opacity: 0;
-            transition: opacity 0.3s;
-            filter: blur(40px);
-        }
-
-        .outcome-card:hover::after {
-            opacity: 1;
-        }
-
-        .outcome-card:hover {
-            transform: translateY(-8px) scale(1.02);
-            border-color: rgba(124, 58, 237, 0.3);
-            background: linear-gradient(135deg, rgba(124, 58, 237, 0.03), rgba(236, 72, 153, 0.03));
-        }
-
-        .outcome-icon {
-            font-size: 2.5rem;
-            margin-bottom: 1rem;
-        }
-
-        .outcome-title {
-            font-size: 1.2rem;
-            font-weight: 700;
-            margin-bottom: 0.5rem;
-        }
-
-        .outcome-desc {
-            color: var(--text-muted);
-            font-size: 0.95rem;
-            line-height: 1.5;
-        }
-
-        /* Integration Section */
-        .integration-section {
-            padding: 8rem 2rem;
-            background: linear-gradient(180deg, transparent, rgba(236, 72, 153, 0.02), transparent);
-            position: relative;
+            transition: all 0.2s;
         }
         
-        .integration-section::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 1px;
-            background: var(--gradient-primary);
-            opacity: 0.3;
+        .feature-card:hover {
+            border-color: var(--gray-300);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            transform: translateY(-2px);
         }
-
-        .integration-steps {
-            max-width: 1000px;
-            margin: 4rem auto 0;
+        
+        .feature-icon {
+            width: 48px;
+            height: 48px;
+            background: var(--gray-100);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+            font-size: 1.5rem;
+        }
+        
+        .feature-card h3 {
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+        }
+        
+        .feature-card p {
+            color: var(--gray-600);
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+        
+        /* Code Examples */
+        .code-section {
+            padding: 5rem 2rem;
+            background: var(--gray-50);
+        }
+        
+        .code-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .code-grid {
             display: grid;
-            gap: 2rem;
+            grid-template-columns: 1fr 1fr;
+            gap: 3rem;
+            margin-top: 3rem;
         }
-
-        .step-card {
-            background: rgba(255, 255, 255, 0.02);
-            border: 1px solid var(--border);
-            border-radius: 16px;
+        
+        .code-example {
+            background: var(--white);
+            border: 1px solid var(--gray-200);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .code-header {
+            background: var(--gray-100);
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--gray-200);
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .code-status {
+            padding: 0.25rem 0.75rem;
+            border-radius: 100px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .status-danger {
+            background: var(--red-500);
+            color: var(--white);
+        }
+        
+        .status-success {
+            background: var(--green-500);
+            color: var(--white);
+        }
+        
+        .code-body {
+            padding: 1.5rem;
+        }
+        
+        .code-block {
+            background: var(--gray-900);
+            color: #f0f0f0;
+            padding: 1rem;
+            border-radius: 6px;
+            font-family: var(--font-mono);
+            font-size: 0.875rem;
+            line-height: 1.6;
+            overflow-x: auto;
+        }
+        
+        .code-comment {
+            color: #6b7280;
+        }
+        
+        .code-keyword {
+            color: #7dd3fc;
+        }
+        
+        .code-string {
+            color: #86efac;
+        }
+        
+        .code-error {
+            color: #f87171;
+        }
+        
+        .result-box {
+            margin-top: 1rem;
+            padding: 1rem;
+            background: var(--gray-50);
+            border-radius: 6px;
+            border: 1px solid var(--gray-200);
+            font-size: 0.9rem;
+        }
+        
+        /* Integration */
+        .integration-section {
+            padding: 5rem 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .integration-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+        
+        .integration-card {
+            text-align: center;
             padding: 2rem;
-            display: grid;
-            grid-template-columns: auto 1fr;
-            gap: 2rem;
-            transition: all 0.3s;
         }
-
-        .step-card:hover {
-            transform: translateX(15px);
-            border-color: rgba(124, 58, 237, 0.4);
-            background: linear-gradient(135deg, rgba(124, 58, 237, 0.03), rgba(236, 72, 153, 0.03));
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
-        }
-
+        
         .step-number {
-            width: 52px;
-            height: 52px;
-            background: var(--gradient-primary);
-            color: var(--text-primary);
+            width: 48px;
+            height: 48px;
+            background: var(--blue-600);
+            color: var(--white);
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-weight: 800;
-            font-size: 1.3rem;
-            box-shadow: 0 8px 32px rgba(124, 58, 237, 0.3);
-            position: relative;
+            font-weight: 700;
+            font-size: 1.25rem;
+            margin: 0 auto 1.5rem;
         }
         
-        .step-number::after {
-            content: '';
-            position: absolute;
-            inset: -2px;
-            border-radius: 50%;
-            padding: 2px;
-            background: var(--gradient-primary);
-            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-            -webkit-mask-composite: xor;
-            mask-composite: exclude;
-        }
-
-        .step-content h3 {
-            font-size: 1.3rem;
-            margin-bottom: 0.5rem;
-        }
-
-        .step-content p {
-            color: var(--text-muted);
-            margin-bottom: 1rem;
-        }
-
-        /* Privacy Section */
-        .privacy-section {
-            padding: 6rem 2rem;
-            background: rgba(0, 0, 0, 0.5);
-            border-top: 1px solid var(--border);
-            border-bottom: 1px solid var(--border);
-        }
-
-        .privacy-grid {
-            max-width: 1200px;
-            margin: 3rem auto 0;
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 2rem;
-        }
-
-        .privacy-card {
-            background: rgba(255, 255, 255, 0.02);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 2rem;
-            transition: all 0.3s;
-        }
-
-        .privacy-card:hover {
-            transform: translateY(-8px);
-            border-color: rgba(124, 58, 237, 0.4);
-            background: linear-gradient(135deg, rgba(124, 58, 237, 0.03), rgba(236, 72, 153, 0.03));
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
-        }
-
-        .privacy-card h3 {
-            font-size: 1.2rem;
+        .integration-card h3 {
+            font-size: 1.125rem;
             margin-bottom: 0.75rem;
         }
-
-        .privacy-card p {
-            color: var(--text-muted);
-            line-height: 1.5;
+        
+        .integration-card p {
+            color: var(--gray-600);
+            font-size: 0.95rem;
+            margin-bottom: 1rem;
         }
-
-        /* Trust Section */
-        .trust-section {
-            padding: 6rem 2rem;
+        
+        .code-snippet {
+            background: var(--gray-100);
+            padding: 0.75rem;
+            border-radius: 6px;
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            color: var(--gray-900);
+            text-align: left;
+        }
+        
+        /* Stats */
+        .stats-section {
+            background: var(--gray-900);
+            color: var(--white);
+            padding: 5rem 2rem;
+        }
+        
+        .stats-container {
+            max-width: 1200px;
+            margin: 0 auto;
             text-align: center;
         }
-
-        .trust-badges {
-            max-width: 1200px;
-            margin: 3rem auto 0;
+        
+        .stats-grid {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
             gap: 3rem;
+            margin-top: 3rem;
         }
-
-        .trust-item {
+        
+        .stat {
             text-align: center;
         }
-
-        .trust-number {
-            font-size: 3.5rem;
-            font-weight: 900;
-            background: var(--gradient-primary);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            filter: drop-shadow(0 4px 20px rgba(124, 58, 237, 0.3));
-            letter-spacing: -0.02em;
+        
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
         }
-
-        .trust-label {
-            color: var(--text-muted);
-            font-size: 0.9rem;
-            margin-top: 0.5rem;
+        
+        .stat-label {
+            color: var(--gray-400);
+            font-size: 0.95rem;
         }
-
+        
         /* CTA Section */
         .cta-section {
-            padding: 8rem 2rem;
+            padding: 5rem 2rem;
             text-align: center;
-            position: relative;
+            background: var(--gray-50);
         }
-
-        .cta-title {
-            font-size: 3.5rem;
+        
+        .cta-content {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .cta-content h2 {
+            font-size: 2.5rem;
             font-weight: 800;
             margin-bottom: 1rem;
+            letter-spacing: -0.02em;
         }
-
-        .cta-subtitle {
-            font-size: 1.2rem;
-            color: var(--text-muted);
-            margin-bottom: 3rem;
+        
+        .cta-content p {
+            font-size: 1.125rem;
+            color: var(--gray-600);
+            margin-bottom: 2rem;
         }
-
+        
         .cta-buttons {
             display: flex;
-            gap: 1.5rem;
             justify-content: center;
-        }
-
-        .btn {
-            padding: 1rem 2.5rem;
-            border-radius: 8px;
-            font-weight: 600;
-            text-decoration: none;
-            transition: all 0.3s;
-            display: inline-block;
-        }
-
-        .btn-primary {
-            background: var(--gradient-primary);
-            color: var(--text-primary);
-            border: none;
-            font-weight: 600;
-            position: relative;
-            overflow: hidden;
+            gap: 1rem;
         }
         
-        .btn-primary::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: rgba(255, 255, 255, 0.2);
-            transform: translateX(-100%);
-            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-4px) scale(1.05);
-            box-shadow: var(--glow-primary),
-                       0 20px 40px rgba(124, 58, 237, 0.3);
-        }
-        
-        .btn-primary:hover::before {
-            transform: translateX(100%);
-        }
-
-        .btn-secondary {
-            background: transparent;
-            color: var(--text-primary);
-            border: 2px solid var(--border);
-        }
-
-        .btn-secondary:hover {
-            border-color: var(--accent-primary);
-            background: linear-gradient(135deg, rgba(124, 58, 237, 0.1), rgba(236, 72, 153, 0.1));
-            transform: translateY(-4px);
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
-        }
-
         /* Footer */
         footer {
+            background: var(--gray-900);
+            color: var(--gray-400);
             padding: 3rem 2rem;
             text-align: center;
-            border-top: 1px solid var(--border);
-            color: var(--text-muted);
         }
-
+        
+        footer a {
+            color: var(--gray-400);
+            text-decoration: none;
+        }
+        
+        footer a:hover {
+            color: var(--white);
+        }
+        
         /* Mobile */
         @media (max-width: 768px) {
-            .command-content {
-                flex-direction: column;
-            }
-
-            h1 {
-                font-size: 3rem;
-            }
-
-            .outcome-line {
-                font-size: 2.5rem;
-            }
-
-            .demo-grid,
-            .privacy-grid,
-            .trust-badges {
+            .hero-grid,
+            .code-grid,
+            .features-grid,
+            .integration-grid,
+            .stats-grid {
                 grid-template-columns: 1fr;
             }
-
-            .outcomes-grid {
-                grid-template-columns: 1fr;
+            
+            .hero-content h1 {
+                font-size: 2rem;
             }
-
-            .nav-links {
+            
+            .nav {
                 display: none;
             }
         }
     </style>
 </head>
 <body>
-    <!-- Background Effects -->
-    <div class="grid-container">
-        <div class="grid"></div>
-    </div>
-    <div class="gradient-orb orb-1"></div>
-    <div class="gradient-orb orb-2"></div>
-    <div class="gradient-orb orb-3"></div>
-
-    <!-- Command Bar -->
-    <div class="command-bar">
-        <div class="command-content">
-            <div class="command-install">
-                <span class="command-prompt">$</span>
-                <span>pip install agentcorrect</span>
-                <button class="copy-btn" onclick="navigator.clipboard.writeText('pip install agentcorrect')">copy</button>
-            </div>
-            <div class="nav-links">
-                <a href="#demo">Demo</a>
-                <a href="#outcomes">Outcomes</a>
-                <a href="#privacy">Privacy</a>
-                <a href="https://github.com/ishaan1345/agentcorrect" class="github-btn">GitHub →</a>
-            </div>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <a href="/" class="logo">AgentCorrect</a>
+            <nav class="nav">
+                <a href="#features">Features</a>
+                <a href="#how-it-works">How it Works</a>
+                <a href="#integration">Integration</a>
+                <a href="https://github.com/ishaan1345/agentcorrect/blob/main/README.md">Docs</a>
+                <a href="https://github.com/ishaan1345/agentcorrect" class="github-link">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                        <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
+                    </svg>
+                    GitHub
+                </a>
+            </nav>
         </div>
-    </div>
-
-    <!-- Hero -->
+    </header>
+    
+    <!-- Hero Section -->
     <section class="hero">
-        <div class="hero-content">
-            <div class="incident-badge">
-                <span class="incident-dot"></span>
-                <span>95% Detection Rate • Zero False Positives</span>
+        <div class="hero-grid">
+            <div class="hero-content">
+                <h1>Stop AI agents from breaking production</h1>
+                <p class="subtitle">
+                    AgentCorrect catches payment duplicates and SQL disasters before they deploy. 
+                    Deterministic guardrails that integrate with your CI/CD in 30 seconds.
+                </p>
+                
+                <div class="install-command">
+                    <span class="prompt">$</span>
+                    <span>pip install agentcorrect</span>
+                    <button class="copy-btn" onclick="navigator.clipboard.writeText('pip install agentcorrect')">copy</button>
+                </div>
+                
+                <div class="quick-links">
+                    <a href="https://github.com/ishaan1345/agentcorrect" class="btn btn-primary">Get Started</a>
+                    <a href="#how-it-works" class="btn btn-secondary">See How It Works</a>
+                </div>
             </div>
             
-            <h1>
-                <div class="glitch" data-text="Ship AI Agents">Ship AI Agents</div>
-            </h1>
-            <div class="outcome-line">Without Breaking Production</div>
-            
-            <p class="subtitle">
-                Catch payment duplicates, SQL disasters, and data destruction before they deploy.
-                Deterministic guardrails that integrate into your CI/CD pipeline in 30 seconds.
-            </p>
-            
-            <div class="privacy-badges">
-                <div class="privacy-badge">
-                    <span>🔒</span>
-                    <span>Zero Data Storage</span>
+            <div class="terminal">
+                <div class="terminal-header">
+                    <div class="terminal-dot red"></div>
+                    <div class="terminal-dot yellow"></div>
+                    <div class="terminal-dot green"></div>
                 </div>
-                <div class="privacy-badge">
-                    <span>⚙️</span>
-                    <span>100% Deterministic</span>
-                </div>
-                <div class="privacy-badge">
-                    <span>🏠</span>
-                    <span>Runs Locally</span>
-                </div>
-                <div class="privacy-badge">
-                    <span>🚫</span>
-                    <span>No AI/LLM Used</span>
+                <div class="terminal-body">
+                    <div class="terminal-command">$ agentcorrect analyze trace.jsonl</div>
+                    <div class="terminal-output">
+Analyzing agent trace...
+Checked 47 API calls
+
+<span class="terminal-error">[FAIL] Missing payment idempotency</span>
+  Provider: Stripe
+  Endpoint: /v1/charges
+  Risk: Duplicate charges on retry
+  Fix: Add header 'Idempotency-Key'
+
+<span class="terminal-error">[FAIL] Dangerous SQL operation</span>
+  Query: DELETE FROM users
+  Risk: Missing WHERE clause
+  Impact: All records affected
+
+<span class="terminal-success">Exit code: 2</span>
+<span class="terminal-warning">Build failed - Disasters prevented ✓</span>
+                    </div>
                 </div>
             </div>
         </div>
     </section>
-
-    <!-- Demo Section -->
-    <section class="demo-section" id="demo">
-        <div class="demo-container">
-            <div class="demo-header">
-                <div class="section-label">Live Comparison</div>
-                <h2 class="section-title">Before vs After AgentCorrect</h2>
+    
+    <!-- Trust Section -->
+    <section class="trust-section">
+        <div class="trust-content">
+            <p class="trust-title">Works with your existing trace infrastructure</p>
+            <div class="trust-logos">
+                <div class="trust-logo">OpenTelemetry</div>
+                <div class="trust-logo">Langfuse</div>
+                <div class="trust-logo">Datadog</div>
+                <div class="trust-logo">Galileo</div>
+                <div class="trust-logo">Custom JSONL</div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Features Section -->
+    <section class="features" id="features">
+        <div class="section-header">
+            <h2>What AgentCorrect catches</h2>
+            <p>Deterministic detection based on official vendor documentation</p>
+        </div>
+        
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">💳</div>
+                <h3>Payment Duplicates</h3>
+                <p>
+                    Enforces idempotency requirements for Stripe, PayPal, Square, and 22+ other providers. 
+                    Each provider's exact spec from their documentation.
+                </p>
             </div>
             
-            <div class="demo-grid">
-                <div class="demo-card">
-                    <div class="demo-header-row">
-                        <h3 class="demo-title">Without AgentCorrect</h3>
-                        <span class="status-badge status-danger">Deploys → Disaster</span>
+            <div class="feature-card">
+                <div class="feature-icon">🗄️</div>
+                <h3>SQL Disasters</h3>
+                <p>
+                    Catches DELETE without WHERE, TRUNCATE, DROP TABLE, and tautologies like WHERE 1=1. 
+                    AST parsing, not regex.
+                </p>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon">🔧</div>
+                <h3>Infrastructure Wipes</h3>
+                <p>
+                    Blocks Redis FLUSHALL, MongoDB dropDatabase, S3 DeleteBucket. 
+                    Prevents cache and data wipes.
+                </p>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon">✅</div>
+                <h3>95% Detection Rate</h3>
+                <p>
+                    Catches the most common disasters with zero false positives. 
+                    Only flags actual specification violations.
+                </p>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon">🔒</div>
+                <h3>Zero Data Storage</h3>
+                <p>
+                    Analyzes traces in memory, outputs results, exits. 
+                    No cloud, no telemetry, runs 100% locally.
+                </p>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon">⚡</div>
+                <h3>Fast Analysis</h3>
+                <p>
+                    Processes traces in milliseconds. 
+                    Standard exit codes integrate with any CI/CD pipeline.
+                </p>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Code Examples Section -->
+    <section class="code-section" id="how-it-works">
+        <div class="code-container">
+            <div class="section-header">
+                <h2>See the difference</h2>
+                <p>Real code your agents might deploy</p>
+            </div>
+            
+            <div class="code-grid">
+                <div class="code-example">
+                    <div class="code-header">
+                        Without AgentCorrect
+                        <span class="code-status status-danger">Deploys to Production</span>
                     </div>
-                    
-                    <div class="code-block">
-                        <div><span class="code-comment"># AI agent retrying payment</span></div>
-                        <div>response = stripe.Charge.create(</div>
-                        <div>    amount=<span class="code-string">9900</span>,</div>
-                        <div>    currency=<span class="code-string">"usd"</span>,</div>
-                        <div>    <span class="code-danger"># Missing: idempotency_key</span></div>
-                        <div>)</div>
-                    </div>
-                    
-                    <div class="output-block">
-                        <div style="color: var(--text-muted)">Monday 3:47 AM:</div>
-                        <div style="color: var(--accent-danger)">Customer charged $99.00</div>
-                        <div style="color: var(--accent-danger)">Customer charged $99.00</div>
-                        <div style="color: var(--accent-danger)">Customer charged $99.00</div>
-                        <div style="color: var(--accent-danger)">Customer charged $99.00</div>
-                        <div style="color: var(--accent-danger)">Customer charged $99.00</div>
-                        <div style="color: var(--text-muted); margin-top: 0.5rem">Support ticket: "WTF?!"</div>
+                    <div class="code-body">
+                        <div class="code-block">
+<span class="code-comment"># AI agent retrying payment</span>
+response = stripe.Charge.create(
+    amount=9900,
+    currency="usd",
+    <span class="code-error"># Missing: idempotency_key</span>
+)
+                        </div>
+                        <div class="result-box">
+                            <strong>Result:</strong> Customer charged 5 times = $495 lost<br>
+                            Support tickets, chargebacks, angry customers
+                        </div>
                     </div>
                 </div>
                 
-                <div class="demo-card">
-                    <div class="demo-header-row">
-                        <h3 class="demo-title">With AgentCorrect</h3>
-                        <span class="status-badge status-success">Blocked → Safe</span>
+                <div class="code-example">
+                    <div class="code-header">
+                        With AgentCorrect
+                        <span class="code-status status-success">Blocked in CI/CD</span>
                     </div>
-                    
-                    <div class="code-block">
-                        <div><span class="code-comment"># Same dangerous code</span></div>
-                        <div>response = stripe.Charge.create(</div>
-                        <div>    amount=<span class="code-string">9900</span>,</div>
-                        <div>    currency=<span class="code-string">"usd"</span>,</div>
-                        <div>    <span class="code-danger"># Missing: idempotency_key</span></div>
-                        <div>)</div>
-                    </div>
-                    
-                    <div class="output-block">
-                        <div class="output-fail">[FAIL] Missing payment idempotency</div>
-                        <div class="output-line">Provider: Stripe</div>
-                        <div class="output-line">Risk: Duplicate charges on retry</div>
-                        <div class="output-line">Fix: Add idempotency_key</div>
-                        <div style="color: var(--accent-danger); margin-top: 1rem; font-weight: 600;">Exit code: 2 (Deploy blocked)</div>
-                        <div class="output-success" style="margin-top: 0.5rem">✓ Disaster prevented</div>
+                    <div class="code-body">
+                        <div class="code-block">
+<span class="code-comment"># Same dangerous code</span>
+response = stripe.Charge.create(
+    amount=9900,
+    currency="usd",
+    <span class="code-error"># Missing: idempotency_key</span>
+)
+                        </div>
+                        <div class="result-box">
+                            <strong>CI/CD Output:</strong><br>
+                            ❌ Missing payment idempotency<br>
+                            Exit code: 2 - Build failed<br>
+                            ✓ Disaster prevented before production
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </section>
-
-    <!-- Outcomes Section -->
-    <section class="outcomes-section" id="outcomes">
-        <div class="demo-header">
-            <div class="section-label">Outcomes</div>
-            <h2 class="section-title">What Happens When You Install</h2>
-        </div>
-        
-        <div class="outcomes-grid">
-            <div class="outcome-card">
-                <div class="outcome-icon">💳</div>
-                <h3 class="outcome-title">Stop Duplicate Charges</h3>
-                <p class="outcome-desc">
-                    Enforces idempotency requirements for 25+ payment providers.
-                    Based on official API documentation, not guesswork.
-                </p>
-            </div>
-            
-            <div class="outcome-card">
-                <div class="outcome-icon">🛡️</div>
-                <h3 class="outcome-title">Protect Production Data</h3>
-                <p class="outcome-desc">
-                    Catches SQL disasters before they deploy.
-                    DELETE without WHERE, TRUNCATE, DROP — all blocked.
-                </p>
-            </div>
-            
-            <div class="outcome-card">
-                <div class="outcome-icon">🚫</div>
-                <h3 class="outcome-title">CI/CD Integration</h3>
-                <p class="outcome-desc">
-                    Standard exit codes fail builds automatically.
-                    Works with any CI/CD pipeline in 30 seconds.
-                </p>
-            </div>
-            
-            <div class="outcome-card">
-                <div class="outcome-icon">😴</div>
-                <h3 class="outcome-title">Deploy With Confidence</h3>
-                <p class="outcome-desc">
-                    Ship faster knowing disasters are blocked.
-                    No 3 AM pages, no customer complaints.
-                </p>
-            </div>
-            
-            <div class="outcome-card">
-                <div class="outcome-icon">✅</div>
-                <h3 class="outcome-title">Security Compliance</h3>
-                <p class="outcome-desc">
-                    Addresses OWASP's "Excessive Agency" risk.
-                    Demonstrable safety controls for auditors.
-                </p>
-            </div>
-            
-            <div class="outcome-card">
-                <div class="outcome-icon">⚡</div>
-                <h3 class="outcome-title">Accelerate Development</h3>
-                <p class="outcome-desc">
-                    Automate safety checks instead of manual reviews.
-                    Ship AI features faster with guardrails.
-                </p>
-            </div>
-        </div>
-    </section>
-
+    
     <!-- Integration Section -->
-    <section class="integration-section">
-        <div class="demo-header">
-            <div class="section-label">Integration</div>
-            <h2 class="section-title">Add to CI/CD in 30 Seconds</h2>
+    <section class="integration-section" id="integration">
+        <div class="section-header">
+            <h2>Add to CI/CD in 30 seconds</h2>
+            <p>Works with GitHub Actions, GitLab CI, Jenkins, CircleCI, and more</p>
         </div>
         
-        <div class="integration-steps">
-            <div class="step-card">
+        <div class="integration-grid">
+            <div class="integration-card">
                 <div class="step-number">1</div>
-                <div class="step-content">
-                    <h3>Install Package</h3>
-                    <p>Add to your requirements or install directly</p>
-                    <div class="code-block">
-                        <div><span class="command-prompt">$</span> pip install agentcorrect</div>
-                    </div>
+                <h3>Install Package</h3>
+                <p>Add to your requirements or install directly</p>
+                <div class="code-snippet">
+pip install agentcorrect
                 </div>
             </div>
             
-            <div class="step-card">
+            <div class="integration-card">
                 <div class="step-number">2</div>
-                <div class="step-content">
-                    <h3>Add to GitHub Actions</h3>
-                    <p>One step in your workflow</p>
-                    <div class="code-block">
-                        <div>- name: Check agent safety</div>
-                        <div>  run: |</div>
-                        <div>    agentcorrect analyze trace.jsonl</div>
-                        <div>    <span class="code-comment"># Exit 2 = blocks deploy</span></div>
-                    </div>
+                <h3>Add to Pipeline</h3>
+                <p>One line in your CI/CD workflow</p>
+                <div class="code-snippet">
+agentcorrect analyze trace.jsonl
                 </div>
             </div>
             
-            <div class="step-card">
+            <div class="integration-card">
                 <div class="step-number">3</div>
-                <div class="step-content">
-                    <h3>Sleep Better</h3>
-                    <p>Every deployment now checks for:</p>
-                    <ul style="color: var(--text-muted); margin-left: 1.5rem; margin-top: 0.5rem;">
-                        <li>Missing payment idempotency (25+ providers)</li>
-                        <li>SQL disasters (DELETE without WHERE, TRUNCATE)</li>
-                        <li>Cache wipes (Redis FLUSHALL)</li>
-                        <li>Database drops (MongoDB, PostgreSQL)</li>
-                    </ul>
+                <h3>Ship Safely</h3>
+                <p>Exit code 2 blocks deployments with disasters</p>
+                <div class="code-snippet">
+# Automatic protection ✓
                 </div>
             </div>
         </div>
     </section>
-
-    <!-- Privacy Section -->
-    <section class="privacy-section" id="privacy">
-        <div class="demo-header">
-            <div class="section-label">Privacy & Security</div>
-            <h2 class="section-title">No Data Leaves Your Infrastructure</h2>
-            <p style="color: var(--text-muted); max-width: 600px; margin: 0 auto;">
-                AgentCorrect runs entirely in your CI/CD pipeline. No cloud, no telemetry, no storage.
-            </p>
-        </div>
-        
-        <div class="privacy-grid">
-            <div class="privacy-card">
-                <h3>🔒 Zero Data Storage</h3>
-                <p>Analyzes traces in memory, outputs results, exits. No databases, no logs, no retention.</p>
-            </div>
-            <div class="privacy-card">
-                <h3>⚙️ Deterministic Rules</h3>
-                <p>No AI, no LLMs, no hallucinations. Just vendor specs turned into reliable checks.</p>
-            </div>
-            <div class="privacy-card">
-                <h3>🏠 100% Local</h3>
-                <p>Runs in your GitHub Actions, GitLab CI, Jenkins. Never phones home.</p>
-            </div>
-            <div class="privacy-card">
-                <h3>📖 Open Source</h3>
-                <p>MIT licensed. Audit the code. Fork it. Run it air-gapped. Full control.</p>
+    
+    <!-- Stats Section -->
+    <section class="stats-section">
+        <div class="stats-container">
+            <h2 style="font-size: 2rem; margin-bottom: 1rem;">By the numbers</h2>
+            <div class="stats-grid">
+                <div class="stat">
+                    <div class="stat-number">25+</div>
+                    <div class="stat-label">Payment Providers</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-number">95%</div>
+                    <div class="stat-label">Detection Rate</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-number">0</div>
+                    <div class="stat-label">False Positives</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-number">100ms</div>
+                    <div class="stat-label">Analysis Time</div>
+                </div>
             </div>
         </div>
     </section>
-
-    <!-- Trust Section -->
-    <section class="trust-section">
-        <div class="demo-header">
-            <h2 class="section-title">Built on Vendor Specs, Not Opinions</h2>
-        </div>
-        
-        <div class="trust-badges">
-            <div class="trust-item">
-                <div class="trust-number">25+</div>
-                <div class="trust-label">Payment Providers</div>
-            </div>
-            <div class="trust-item">
-                <div class="trust-number">0</div>
-                <div class="trust-label">False Positives</div>
-            </div>
-            <div class="trust-item">
-                <div class="trust-number">100ms</div>
-                <div class="trust-label">Analysis Time</div>
-            </div>
-            <div class="trust-item">
-                <div class="trust-number">OWASP</div>
-                <div class="trust-label">Compliant</div>
-            </div>
-        </div>
-    </section>
-
+    
     <!-- CTA Section -->
     <section class="cta-section">
-        <h2 class="cta-title">Ship AI Agents With Confidence</h2>
-        <p class="cta-subtitle">Join teams deploying safely with deterministic guardrails</p>
-        <div class="cta-buttons">
-            <a href="https://github.com/ishaan1345/agentcorrect" class="btn btn-primary">Get Started →</a>
-            <a href="https://github.com/ishaan1345/agentcorrect/blob/main/README.md" class="btn btn-secondary">Read Docs</a>
+        <div class="cta-content">
+            <h2>Start protecting your production today</h2>
+            <p>Open source, MIT licensed, runs entirely in your infrastructure</p>
+            <div class="cta-buttons">
+                <a href="https://github.com/ishaan1345/agentcorrect" class="btn btn-primary">View on GitHub</a>
+                <a href="https://github.com/ishaan1345/agentcorrect/blob/main/README.md" class="btn btn-secondary">Read Documentation</a>
+            </div>
         </div>
     </section>
-
+    
     <!-- Footer -->
     <footer>
-        <p>© 2025 AgentCorrect | MIT License | Built for teams shipping AI to production</p>
+        <p>© 2025 AgentCorrect | MIT License | <a href="https://github.com/ishaan1345/agentcorrect">GitHub</a></p>
     </footer>
-
-    <script>
-        // Smooth scrolling
-        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function (e) {
-                e.preventDefault();
-                const target = document.querySelector(this.getAttribute('href'));
-                if (target) {
-                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }
-            });
-        });
-        
-        // Add parallax effect to gradient orbs
-        window.addEventListener('mousemove', (e) => {
-            const orbs = document.querySelectorAll('.gradient-orb');
-            const x = e.clientX / window.innerWidth;
-            const y = e.clientY / window.innerHeight;
-            
-            orbs.forEach((orb, index) => {
-                const speed = (index + 1) * 10;
-                const xOffset = (x - 0.5) * speed;
-                const yOffset = (y - 0.5) * speed;
-                orb.style.transform = `translate(${xOffset}px, ${yOffset}px)`;
-            });
-        });
-        
-        // Add intersection observer for fade-in animations
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    entry.target.style.opacity = '1';
-                    entry.target.style.transform = 'translateY(0)';
-                }
-            });
-        }, { threshold: 0.1 });
-        
-        document.addEventListener('DOMContentLoaded', () => {
-            const elements = document.querySelectorAll('.outcome-card, .step-card, .privacy-card, .trust-item');
-            elements.forEach((el, index) => {
-                el.style.opacity = '0';
-                el.style.transform = 'translateY(30px)';
-                el.style.transition = `all 0.6s cubic-bezier(0.4, 0, 0.2, 1) ${index * 0.1}s`;
-                observer.observe(el);
-            });
-        });
-    </script>
 </body>
 </html>
