@@ -5,37 +5,113 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "agentcorrect"
 version = "1.0.0"
-description = "CI/CD guardrails that prevent AI agents from charging customers twice"
+description = "Stop AI agents from breaking production - CI/CD guardrails for payment idempotency and database safety"
 readme = "README.md"
 license = {text = "MIT"}
 authors = [{name = "AgentCorrect Team", email = "support@agentcorrect.com"}]
-requires-python = ">=3.7"
+maintainers = [{name = "Ishaan", email = "ishaan@agentcorrect.com"}]
+requires-python = ">=3.8"
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
     "Topic :: Software Development :: Quality Assurance",
     "Topic :: Software Development :: Testing",
     "Topic :: System :: Monitoring",
+    "Topic :: Security",
     "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.7",
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
 ]
-keywords = ["ai-safety", "cicd", "stripe", "payment", "idempotency", "llm", "agents", "owasp"]
+keywords = [
+    "ai-safety",
+    "llm-security", 
+    "agent-security",
+    "cicd",
+    "testing",
+    "stripe",
+    "payment",
+    "idempotency",
+    "database-safety",
+    "owasp",
+    "guardrails"
+]
 
 [project.urls]
 Homepage = "https://agentcorrect.com"
 Repository = "https://github.com/ishaan1345/agentcorrect"
 Documentation = "https://github.com/ishaan1345/agentcorrect#readme"
 "Bug Tracker" = "https://github.com/ishaan1345/agentcorrect/issues"
+"Changelog" = "https://github.com/ishaan1345/agentcorrect/releases"
 
 [project.scripts]
 agentcorrect = "agentcorrect.cli:main"
 
 [tool.setuptools.packages.find]
 include = ["agentcorrect*"]
-exclude = ["tests*", "docs*"]
+exclude = ["tests*", "docs*", "examples*"]
+
+[tool.setuptools.package-data]
+agentcorrect = ["fixtures/**/*.jsonl"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+addopts = "-v --tb=short --strict-markers"
+markers = [
+    "unit: Unit tests",
+    "integration: Integration tests",
+    "slow: Tests that take > 1s",
+]
+
+[tool.coverage.run]
+source = ["agentcorrect"]
+omit = ["*/tests/*", "*/test_*.py"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+]
+
+[tool.black]
+line-length = 100
+target-version = ['py38', 'py39', 'py310', 'py311', 'py312']
+include = '\.pyi?$'
+
+[tool.isort]
+profile = "black"
+line_length = 100
+
+[tool.ruff]
+line-length = 100
+target-version = "py38"
+select = [
+    "E",  # pycodestyle errors
+    "W",  # pycodestyle warnings
+    "F",  # pyflakes
+    "I",  # isort
+    "B",  # flake8-bugbear
+    "C4", # flake8-comprehensions
+    "UP", # pyupgrade
+]
+ignore = ["E501"]  # line too long
+
+[tool.mypy]
+python_version = "3.8"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+ignore_missing_imports = true
+
+[tool.bandit]
+exclude_dirs = ["tests", "docs"]
+severity = "medium"
+confidence = "medium"

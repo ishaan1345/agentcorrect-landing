@@ -10,7 +10,7 @@ from datetime import datetime
 def print_human_summary(findings: List[Dict], coverage: Dict[str, Any], total_events: int, output_dir: Path = None):
     """Print human-readable summary to stdout."""
     print("=" * 60)
-    print(f"AgentCorrect Analysis - {total_events} events scanned")
+    print(f"AgentCorrect Analysis - {total_events:,} events scanned")
     print("=" * 60)
     
     # Group findings by severity
