@@ -19,8 +19,8 @@
 
         body {
             font-family: 'Inter', system-ui, -apple-system, sans-serif;
-            background: #0a0a0a;
-            color: #e5e5e5;
+            background: #000000;
+            color: #ffffff;
             font-size: 17px;
             line-height: 1.7;
             -webkit-font-smoothing: antialiased;
@@ -48,20 +48,21 @@
 
         /* Main */
         h1 {
-            font-size: 56px;
-            line-height: 1.05;
-            margin-bottom: 24px;
+            font-size: 64px;
+            line-height: 1;
+            margin-bottom: 28px;
             font-weight: 800;
-            letter-spacing: -1.5px;
+            letter-spacing: -2px;
             color: #ffffff;
         }
 
         .lead {
-            font-size: 22px;
-            color: #9ca3af;
-            margin-bottom: 32px;
+            font-size: 24px;
+            color: #a0a0a0;
+            margin-bottom: 36px;
             font-weight: 400;
             letter-spacing: -0.3px;
+            opacity: 0.9;
         }
         
         .tech-badges {
@@ -94,14 +95,14 @@
             padding: 32px;
             position: relative;
             overflow: hidden;
-            background: #111111;
-            border: 1px solid #262626;
+            background: #0a0a0a;
+            border: 1px solid #1a1a1a;
             transition: transform 0.2s ease, border-color 0.2s ease;
         }
         
         .box:hover {
             transform: translateY(-2px);
-            border-color: #404040;
+            border-color: #333333;
         }
 
         .box-title {
@@ -116,8 +117,8 @@
         }
 
         .without {
-            border: 1px solid #7f1d1d;
-            background: #1a0505;
+            border: 1px solid rgba(220, 38, 38, 0.3);
+            background: linear-gradient(135deg, #0f0505 0%, #1a0505 100%);
         }
 
         .without .box-title {
@@ -135,8 +136,8 @@
         }
 
         .with {
-            border: 1px solid #14532d;
-            background: #052e16;
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            background: linear-gradient(135deg, #041a0d 0%, #052e16 100%);
         }
 
         .with .box-title {
@@ -187,14 +188,15 @@
 
         /* Install */
         .install {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border-radius: 20px;
-            padding: 48px;
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            border-radius: 24px;
+            padding: 56px;
             margin: 100px 0;
             text-align: center;
             position: relative;
             overflow: hidden;
-            box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+            box-shadow: 0 25px 50px -12px rgb(99 102 241 / 0.25);
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
         
         .install::before {
@@ -241,15 +243,15 @@
         }
 
         .commands {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
+            background: rgba(0, 0, 0, 0.9);
+            backdrop-filter: blur(20px);
             border-radius: 12px;
-            padding: 24px;
+            padding: 28px;
             font-family: 'JetBrains Mono', monospace;
-            font-size: 15px;
-            margin: 24px auto;
-            max-width: 500px;
-            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            font-size: 16px;
+            margin: 28px auto;
+            max-width: 520px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         .cmd {
@@ -260,16 +262,16 @@
             transition: background 0.2s ease;
             position: relative;
             font-weight: 500;
-            color: #1f2937;
+            color: #ffffff;
         }
 
         .cmd:hover {
-            background: #f3f4f6;
+            background: rgba(255, 255, 255, 0.1);
         }
         
         .cmd::before {
             content: '$';
-            color: #9ca3af;
+            color: #6366f1;
             margin-right: 8px;
             font-weight: 400;
         }
@@ -398,13 +400,13 @@
             display: inline-block;
             background: #ffffff;
             color: #000000;
-            padding: 18px 48px;
+            padding: 20px 56px;
             border-radius: 12px;
             text-decoration: none;
-            font-weight: 600;
-            font-size: 17px;
-            letter-spacing: -0.2px;
-            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.2), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+            font-weight: 700;
+            font-size: 18px;
+            letter-spacing: -0.3px;
+            box-shadow: 0 0 40px rgba(255, 255, 255, 0.2);
             transition: all 0.3s ease;
             position: relative;
             overflow: hidden;
@@ -422,8 +424,9 @@
         }
 
         .button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.25), 0 8px 10px -6px rgb(0 0 0 / 0.15);
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 0 60px rgba(255, 255, 255, 0.3);
+            background: #f0f0f0;
         }
         
         .button:hover::before {
@@ -461,8 +464,8 @@
         /* Mobile */
         @media (max-width: 768px) {
             h1 {
-                font-size: 36px;
-                letter-spacing: -1px;
+                font-size: 40px;
+                letter-spacing: -1.5px;
             }
 
             .lead {
@@ -560,7 +563,7 @@
             font-family: 'JetBrains Mono', monospace;
             font-size: 14px;
             color: #e2e8f0;
-            min-height: 300px;
+            min-height: 400px;
             line-height: 1.8;
         }
         
@@ -631,8 +634,8 @@
         }
         
         .disaster-card {
-            background: #111111;
-            border: 1px solid #262626;
+            background: #0a0a0a;
+            border: 1px solid #1a1a1a;
             border-radius: 12px;
             padding: 24px;
             text-align: left;
