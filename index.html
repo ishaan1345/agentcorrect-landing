@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AgentCorrect - Your AI agent just charged someone's card 47 times</title>
-    <link href="https://fonts.googleapis.com/css2?family=Berkeley+Mono&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <title>AgentCorrect - Trace analysis for AI agents in production</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -14,22 +14,20 @@
 
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: #fafafa;
-            color: #000;
+            background: white;
+            color: #111;
             line-height: 1.6;
+            font-size: 15px;
         }
 
         .container {
-            max-width: 980px;
+            max-width: 720px;
             margin: 0 auto;
             padding: 0 20px;
         }
 
-        /* Header */
         header {
-            padding: 24px 0;
-            border-bottom: 1px solid #e5e5e5;
-            background: white;
+            padding: 32px 0;
         }
 
         nav {
@@ -39,8 +37,7 @@
         }
 
         .logo {
-            font-family: 'Berkeley Mono', monospace;
-            font-size: 16px;
+            font-size: 15px;
             font-weight: 600;
         }
 
@@ -56,202 +53,181 @@
         }
 
         .nav-links a:hover {
-            color: #000;
+            color: #111;
         }
 
-        /* The Story */
-        .story {
-            padding: 80px 0;
-            background: white;
-        }
-
-        .story-content {
-            max-width: 680px;
+        /* Main */
+        .main {
+            padding: 48px 0 80px;
         }
 
         h1 {
-            font-size: 42px;
-            font-weight: 700;
-            line-height: 1.2;
-            margin-bottom: 32px;
-            letter-spacing: -1px;
-        }
-
-        .story-text {
-            font-size: 18px;
-            line-height: 1.7;
-            color: #333;
-            margin-bottom: 24px;
-        }
-
-        .story-text strong {
-            color: #000;
-            font-weight: 600;
-        }
-
-        .screenshot {
-            margin: 40px 0;
-            padding: 20px;
-            background: #f5f5f5;
-            border-radius: 8px;
-            border: 1px solid #e0e0e0;
-        }
-
-        .screenshot-header {
-            font-family: 'Berkeley Mono', monospace;
-            font-size: 12px;
-            color: #666;
-            margin-bottom: 12px;
-        }
-
-        .screenshot-content {
-            font-family: 'Berkeley Mono', monospace;
-            font-size: 13px;
-            line-height: 1.6;
-            color: #000;
-        }
-
-        .error-line {
-            color: #dc2626;
-            font-weight: 600;
-        }
-
-        .timestamp {
-            color: #666;
-        }
-
-        /* The Solution */
-        .solution {
-            padding: 60px 0;
-            background: #f8f8f8;
-            border-top: 1px solid #e5e5e5;
-        }
-
-        .solution h2 {
             font-size: 32px;
-            margin-bottom: 20px;
+            font-weight: 600;
+            line-height: 1.3;
+            margin-bottom: 24px;
+            letter-spacing: -0.5px;
         }
 
-        .solution-text {
+        .lead {
             font-size: 17px;
             line-height: 1.6;
-            color: #333;
-            margin-bottom: 32px;
-            max-width: 680px;
-        }
-
-        .install {
-            display: inline-flex;
-            align-items: center;
-            gap: 12px;
-            background: white;
-            border: 1px solid #d4d4d4;
-            border-radius: 6px;
-            padding: 12px 16px;
-            font-family: 'Berkeley Mono', monospace;
-            font-size: 14px;
+            color: #444;
             margin-bottom: 40px;
         }
 
-        .dollar {
+        .problem {
+            margin: 48px 0;
+        }
+
+        .problem h2 {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+
+        .problem p {
+            color: #444;
+            margin-bottom: 16px;
+            line-height: 1.7;
+        }
+
+        code {
+            font-family: 'SF Mono', Monaco, monospace;
+            font-size: 13px;
+            background: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+        }
+
+        .trace-example {
+            background: #f8f8f8;
+            border: 1px solid #e5e5e5;
+            border-radius: 6px;
+            padding: 20px;
+            margin: 32px 0;
+            font-family: 'SF Mono', Monaco, monospace;
+            font-size: 12px;
+            line-height: 1.6;
+            overflow-x: auto;
+        }
+
+        .trace-example .comment {
             color: #666;
         }
 
-        /* How it Actually Works */
-        .how {
-            background: white;
-            padding: 60px 0;
-            border-top: 1px solid #e5e5e5;
+        .trace-example .key {
+            color: #0969da;
         }
 
-        .terminal {
-            background: #1e1e1e;
-            color: #d4d4d4;
-            padding: 24px;
-            border-radius: 8px;
-            font-family: 'Berkeley Mono', monospace;
-            font-size: 13px;
-            line-height: 1.8;
+        .trace-example .string {
+            color: #032f62;
+        }
+
+        .trace-example .missing {
+            background: #ffebe9;
+            padding: 2px 4px;
+            border-radius: 2px;
+        }
+
+        .install-section {
+            margin: 48px 0;
+            padding: 32px;
+            background: #f6f8fa;
+            border-radius: 6px;
+        }
+
+        .install-section h2 {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+
+        .install-command {
+            background: white;
+            border: 1px solid #d1d9e0;
+            border-radius: 6px;
+            padding: 12px 16px;
+            font-family: 'SF Mono', Monaco, monospace;
+            font-size: 14px;
+            margin-bottom: 24px;
+        }
+
+        .output-example {
+            background: #1f2328;
+            color: #e6edf3;
+            padding: 20px;
+            border-radius: 6px;
+            font-family: 'SF Mono', Monaco, monospace;
+            font-size: 12px;
+            line-height: 1.6;
+            margin: 24px 0;
+        }
+
+        .output-example .error {
+            color: #ff7b72;
+        }
+
+        .output-example .warning {
+            color: #d29922;
+        }
+
+        .output-example .dim {
+            color: #8b949e;
+        }
+
+        .features {
+            margin: 48px 0;
+        }
+
+        .feature-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .feature-list li {
+            padding: 12px 0;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            align-items: baseline;
+            gap: 12px;
+        }
+
+        .feature-list li:last-child {
+            border-bottom: none;
+        }
+
+        .feature-list .label {
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+
+        .feature-list .desc {
+            color: #444;
+        }
+
+        .integration-note {
+            padding: 20px;
+            background: #fff8dc;
+            border: 1px solid #ffe4b5;
+            border-radius: 6px;
             margin: 32px 0;
         }
 
-        .terminal .prompt {
-            color: #569cd6;
-        }
-
-        .terminal .comment {
-            color: #6a9955;
-        }
-
-        .terminal .error {
-            color: #f48771;
-        }
-
-        .terminal .warning {
-            color: #dcdcaa;
-        }
-
-        /* The Real Stuff */
-        .reality {
-            padding: 60px 0;
-            background: #fafafa;
-            border-top: 1px solid #e5e5e5;
-        }
-
-        .reality h2 {
-            font-size: 28px;
-            margin-bottom: 32px;
-        }
-
-        .truth-list {
-            display: grid;
-            gap: 24px;
-            max-width: 680px;
-        }
-
-        .truth {
-            display: flex;
-            gap: 16px;
-        }
-
-        .truth-icon {
-            width: 24px;
-            height: 24px;
-            background: #000;
-            border-radius: 50%;
-            flex-shrink: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 14px;
-            font-weight: 700;
-        }
-
-        .truth-content h3 {
+        .integration-note h3 {
             font-size: 16px;
-            margin-bottom: 4px;
+            margin-bottom: 12px;
         }
 
-        .truth-content p {
-            color: #666;
+        .integration-note p {
             font-size: 14px;
+            color: #444;
+            margin-bottom: 8px;
         }
 
-        /* Footer */
         footer {
             padding: 48px 0;
-            border-top: 1px solid #e5e5e5;
-            background: white;
-        }
-
-        .footer-content {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .footer-left {
+            border-top: 1px solid #eee;
             font-size: 14px;
             color: #666;
         }
@@ -259,35 +235,29 @@
         .footer-links {
             display: flex;
             gap: 24px;
+            margin-bottom: 16px;
         }
 
         .footer-links a {
             color: #666;
             text-decoration: none;
-            font-size: 14px;
         }
 
         .footer-links a:hover {
-            color: #000;
+            color: #111;
         }
 
-        /* Mobile */
-        @media (max-width: 768px) {
+        @media (max-width: 640px) {
             h1 {
-                font-size: 32px;
+                font-size: 28px;
             }
 
-            .story-text {
+            .lead {
                 font-size: 16px;
             }
 
             .nav-links {
                 display: none;
-            }
-
-            .footer-content {
-                flex-direction: column;
-                gap: 24px;
             }
         }
     </style>
@@ -295,167 +265,146 @@
 <body>
     <header>
         <nav class="container">
-            <div class="logo">agentcorrect</div>
+            <div class="logo">AgentCorrect</div>
             <div class="nav-links">
                 <a href="https://pypi.org/project/agentcorrect/">PyPI</a>
                 <a href="https://github.com/ishaan1345/agentcorrect">GitHub</a>
+                <a href="https://github.com/ishaan1345/agentcorrect#readme">Docs</a>
             </div>
         </nav>
     </header>
 
-    <section class="story">
+    <main class="main">
         <div class="container">
-            <div class="story-content">
-                <h1>Your AI agent just charged someone's card 47 times</h1>
+            <h1>Trace analysis for AI agents in production</h1>
+            
+            <p class="lead">
+                You're shipping AI agents to production. You're logging traces with LangSmith. 
+                But you're not actually reading those traces to catch the disasters hiding in them.
+            </p>
+
+            <div class="problem">
+                <h2>The problem with AI agents calling APIs</h2>
+                <p>
+                    AI agents don't understand API semantics. They make syntactically correct calls that are 
+                    semantically wrong. They'll retry payment calls without idempotency keys. They'll execute 
+                    <code>DELETE FROM users</code> without a WHERE clause. They work in development, then destroy production.
+                </p>
+
+                <p>
+                    You can trace every call with LangSmith or LangFuse. But traces are just data. 
+                    Someone needs to actually analyze them for patterns that cause production failures.
+                </p>
+            </div>
+
+            <div class="trace-example">
+                <div class="comment"># What your agent generates (looks fine, right?)</div>
+                {
+                  <span class="key">"role"</span>: <span class="string">"http"</span>,
+                  <span class="key">"meta"</span>: {
+                    <span class="key">"http"</span>: {
+                      <span class="key">"method"</span>: <span class="string">"POST"</span>,
+                      <span class="key">"url"</span>: <span class="string">"https://api.stripe.com/v1/charges"</span>,
+                      <span class="key">"headers"</span>: {<span class="missing">/* Idempotency-Key missing */</span>},
+                      <span class="key">"body"</span>: {<span class="key">"amount"</span>: 5000, <span class="key">"currency"</span>: <span class="string">"usd"</span>}
+                    }
+                  }
+                }
+            </div>
+
+            <div class="install-section">
+                <h2>AgentCorrect reads your traces and finds disasters</h2>
                 
-                <p class="story-text">
-                    Last Thursday at 3am, I got woken up by my phone buzzing non-stop. 
-                    <strong>My AI agent had gone rogue.</strong>
-                </p>
-
-                <p class="story-text">
-                    It was supposed to process one payment. Instead, every time the Stripe API timed out, 
-                    my agent retried. And retried. And retried.
-                </p>
-
-                <div class="screenshot">
-                    <div class="screenshot-header">support-tickets-urgent.txt</div>
-                    <div class="screenshot-content">
-                        <div><span class="timestamp">[03:42]</span> WHY WAS I CHARGED 47 TIMES?????</div>
-                        <div><span class="timestamp">[03:43]</span> I NEED A REFUND NOW</div>
-                        <div><span class="timestamp">[03:45]</span> IS THIS A SCAM???</div>
-                        <div><span class="timestamp">[03:47]</span> I'm calling my bank</div>
-                        <div class="error-line"><span class="timestamp">[03:51]</span> Chargeback initiated</div>
-                    </div>
+                <div class="install-command">
+                    $ pip install agentcorrect
                 </div>
 
-                <p class="story-text">
-                    The problem wasn't the code. The problem was that <strong>AI agents don't know what 
-                    they don't know.</strong> They don't know that Stripe needs an idempotency key. They don't 
-                    know that DELETE without WHERE deletes everything. They just... do things.
+                <p style="margin-bottom: 16px;">
+                    Export your traces from LangSmith, LangFuse, or OpenTelemetry. Run the analysis:
                 </p>
 
-                <p class="story-text">
-                    So I built AgentCorrect. It reads the traces from your AI agent and catches these 
-                    disasters before they happen. Before you get that 3am call.
+                <div class="output-example">
+$ agentcorrect analyze trace.jsonl
+
+<span class="dim">Analyzing 1,247 events...</span>
+
+<span class="error">SEV0: Payment call missing idempotency protection</span>
+  Provider: Stripe (POST /v1/charges)
+  Line: 142
+  Impact: Will charge customer multiple times on retry
+  Fix: Add 'Idempotency-Key' header with unique value
+
+<span class="error">SEV0: SQL DELETE without WHERE clause</span>
+  Query: DELETE FROM users
+  Line: 89
+  Impact: Will delete all records in table
+  Fix: Add WHERE clause or use TRUNCATE if intentional
+
+<span class="warning">Exit code: 2</span> <span class="dim"># Blocks CI/CD deployment</span>
+                </div>
+
+                <p style="font-size: 14px; color: #666;">
+                    Add to your CI/CD pipeline. If disasters are found, deployment stops.
+                </p>
+            </div>
+
+            <div class="features">
+                <h2>What it actually does</h2>
+                <ul class="feature-list">
+                    <li>
+                        <span class="label">Payment APIs:</span>
+                        <span class="desc">Checks Stripe, PayPal, Square, Adyen calls for missing idempotency keys</span>
+                    </li>
+                    <li>
+                        <span class="label">SQL queries:</span>
+                        <span class="desc">Detects unbounded DELETEs, UPDATEs, and destructive operations</span>
+                    </li>
+                    <li>
+                        <span class="label">Cache/DB ops:</span>
+                        <span class="desc">Catches Redis FLUSHALL, MongoDB dropDatabase, S3 DeleteBucket</span>
+                    </li>
+                    <li>
+                        <span class="label">Output format:</span>
+                        <span class="desc">Human-readable reports or OPA Rego policies for runtime enforcement</span>
+                    </li>
+                    <li>
+                        <span class="label">Privacy:</span>
+                        <span class="desc">Runs locally, no data leaves your machine</span>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="integration-note">
+                <h3>Works with your observability stack</h3>
+                <p>• Export traces from LangSmith, LangFuse, or OpenTelemetry</p>
+                <p>• Accepts any JSONL format with role and meta fields</p>
+                <p>• One-line integration with GitHub Actions, GitLab CI, Jenkins</p>
+                <p>• Standard exit codes (0 = safe, 2 = disasters found)</p>
+            </div>
+
+            <div style="margin-top: 48px; padding-top: 32px; border-top: 1px solid #eee;">
+                <h2 style="font-size: 18px; margin-bottom: 16px;">Why I built this</h2>
+                <p style="color: #444; line-height: 1.7;">
+                    I was debugging payment failures in our AI agent. The agent code looked perfect. 
+                    The LangSmith traces showed successful API calls. But customers were getting charged 
+                    multiple times. Turns out the agent didn't know about idempotency keys - a concept 
+                    that doesn't exist in its training data. AgentCorrect is basically a linter for AI 
+                    agent traces, checking for patterns that cause production disasters.
                 </p>
             </div>
         </div>
-    </section>
-
-    <section class="solution">
-        <div class="container">
-            <h2>Here's what I do now</h2>
-            
-            <p class="solution-text">
-                Every time my agent runs, I save its trace. Every time before I deploy, 
-                AgentCorrect scans it. If it finds something that will cause a disaster, 
-                it stops the deployment.
-            </p>
-
-            <div class="install">
-                <span class="dollar">$</span>
-                <code>pip install agentcorrect</code>
-            </div>
-
-            <div class="terminal">
-                <div><span class="prompt">$</span> agentcorrect analyze trace.jsonl</div>
-                <div class="comment"># Reading 1,247 events from your agent run...</div>
-                <div>&nbsp;</div>
-                <div class="error">FOUND: Payment call that will retry and charge multiple times</div>
-                <div>  Line 142: POST to stripe.com/v1/charges</div>
-                <div>  Missing: Idempotency-Key header</div>
-                <div>  Impact: Customer will be charged on every retry</div>
-                <div>&nbsp;</div>
-                <div class="error">FOUND: SQL query that will delete all records</div>
-                <div>  Line 89: DELETE FROM users</div>
-                <div>  Missing: WHERE clause</div>
-                <div>  Impact: Will delete entire users table</div>
-                <div>&nbsp;</div>
-                <div class="warning">Exit code: 2</div>
-                <div class="comment"># Deployment blocked. Fix these first.</div>
-            </div>
-
-            <p class="solution-text">
-                That's it. It reads the traces so I don't have to. It knows what patterns 
-                cause disasters because I've catalogued them all. Stripe, PayPal, Square, 
-                Adyen - each has specific requirements. SQL, Redis, MongoDB - each has 
-                dangerous operations.
-            </p>
-        </div>
-    </section>
-
-    <section class="reality">
-        <div class="container">
-            <h2>The boring technical details</h2>
-            
-            <div class="truth-list">
-                <div class="truth">
-                    <div class="truth-icon">1</div>
-                    <div class="truth-content">
-                        <h3>It runs locally</h3>
-                        <p>Your traces never leave your machine. No cloud, no uploads, no tracking.</p>
-                    </div>
-                </div>
-
-                <div class="truth">
-                    <div class="truth-icon">2</div>
-                    <div class="truth-content">
-                        <h3>It's deterministic</h3>
-                        <p>No AI, no ML, no hallucinations. Just pattern matching against known disasters.</p>
-                    </div>
-                </div>
-
-                <div class="truth">
-                    <div class="truth-icon">3</div>
-                    <div class="truth-content">
-                        <h3>It works with your stack</h3>
-                        <p>LangSmith, LangFuse, OpenTelemetry, or just JSONL files. One line in your CI/CD.</p>
-                    </div>
-                </div>
-
-                <div class="truth">
-                    <div class="truth-icon">4</div>
-                    <div class="truth-content">
-                        <h3>It outputs rules</h3>
-                        <p>Generates OPA Rego policies if you want to enforce rules at runtime too.</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <section class="how">
-        <div class="container">
-            <h2>Add it to your pipeline</h2>
-            
-            <div class="terminal">
-                <div class="comment"># .github/workflows/test.yml</div>
-                <div>&nbsp;</div>
-                <div>- name: Test agent safety</div>
-                <div>  run: |</div>
-                <div>    python run_agent.py --save-trace trace.jsonl</div>
-                <div>    agentcorrect analyze trace.jsonl</div>
-            </div>
-
-            <p class="solution-text">
-                If AgentCorrect finds a disaster, it returns exit code 2. Your build fails. 
-                You fix the issue. Then you ship.
-            </p>
-        </div>
-    </section>
+    </main>
 
     <footer>
         <div class="container">
-            <div class="footer-content">
-                <div class="footer-left">
-                    Built to prevent 3am wake-up calls
-                </div>
-                <div class="footer-links">
-                    <a href="https://pypi.org/project/agentcorrect/">PyPI</a>
-                    <a href="https://github.com/ishaan1345/agentcorrect">GitHub</a>
-                    <a href="https://github.com/ishaan1345/agentcorrect/issues">Issues</a>
-                </div>
+            <div class="footer-links">
+                <a href="https://pypi.org/project/agentcorrect/">PyPI</a>
+                <a href="https://github.com/ishaan1345/agentcorrect">GitHub</a>
+                <a href="https://github.com/ishaan1345/agentcorrect#readme">Documentation</a>
+                <a href="https://github.com/ishaan1345/agentcorrect/issues">Issues</a>
+            </div>
+            <div>
+                MIT License. No telemetry. No data collection.
             </div>
         </div>
     </footer>
