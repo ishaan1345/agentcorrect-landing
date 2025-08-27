@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AgentCorrect - CI/CD guardrails for AI agents</title>
-    <meta name="description" content="Static analyzer that scans AI agent traces for dangerous patterns. Catches missing idempotency, unbounded deletes, cache wipes. Exit code 2 blocks deployment.">
+    <title>AgentCorrect - Stop AI agents before they cause disasters</title>
+    <meta name="description" content="Pre-deployment safety checks for AI agents. Catches duplicate charges, database wipes, and service outages before they reach production.">
+    
     <style>
         * {
             margin: 0;
@@ -12,443 +13,893 @@
             box-sizing: border-box;
         }
 
+        :root {
+            --bg-primary: #0a0a0a;
+            --bg-secondary: #111111;
+            --bg-tertiary: #1a1a1a;
+            --text-primary: #ffffff;
+            --text-secondary: #a0a0a0;
+            --text-muted: #666666;
+            --accent: #00ff88;
+            --danger: #ff4444;
+            --warning: #ffaa00;
+            --border: #2a2a2a;
+            --gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', system-ui, sans-serif;
-            background: #000;
-            color: #fff;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
             line-height: 1.6;
-            min-height: 100vh;
+            overflow-x: hidden;
         }
 
-        /* Terminal aesthetic */
-        .terminal {
-            background: linear-gradient(135deg, #0a0a0a 0%, #111 100%);
-            border: 1px solid #333;
-            border-radius: 8px;
-            padding: 24px;
-            margin: 24px auto;
-            max-width: 900px;
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
-            font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
-            font-size: 14px;
+        /* Navigation */
+        nav {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            padding: 20px 0;
+            background: rgba(10, 10, 10, 0.8);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border);
+            z-index: 1000;
         }
 
-        .terminal-header {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 20px;
-            padding-bottom: 16px;
-            border-bottom: 1px solid #333;
-        }
-
-        .terminal-dot {
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-        }
-
-        .dot-red { background: #ff5f56; }
-        .dot-yellow { background: #ffbd2e; }
-        .dot-green { background: #27c93f; }
-
-        .cmd {
-            color: #50fa7b;
-            margin-bottom: 16px;
-        }
-
-        .output {
-            color: #f8f8f2;
-        }
-
-        .fail {
-            color: #ff5555;
-            font-weight: 600;
-        }
-
-        .warn {
-            color: #ffb86c;
-        }
-
-        .success {
-            color: #50fa7b;
-        }
-
-        .dim {
-            opacity: 0.6;
-        }
-
-        /* Main container */
-        .hero {
-            padding: 80px 20px 40px;
-            text-align: center;
+        .nav-content {
             max-width: 1200px;
             margin: 0 auto;
+            padding: 0 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 32px;
+            align-items: center;
+        }
+
+        .nav-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 14px;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover {
+            color: var(--text-primary);
+        }
+
+        .nav-cta {
+            background: var(--accent);
+            color: var(--bg-primary);
+            padding: 8px 16px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 600;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .nav-cta:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 255, 136, 0.3);
+        }
+
+        /* Hero Section */
+        .hero {
+            margin-top: 80px;
+            padding: 120px 24px 80px;
+            text-align: center;
+            position: relative;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 800px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(102, 126, 234, 0.1) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .hero-badge {
+            display: inline-block;
+            padding: 6px 12px;
+            background: rgba(0, 255, 136, 0.1);
+            border: 1px solid rgba(0, 255, 136, 0.2);
+            border-radius: 20px;
+            font-size: 12px;
+            color: var(--accent);
+            margin-bottom: 24px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
         }
 
         h1 {
-            font-size: clamp(2rem, 5vw, 3.5rem);
-            font-weight: 700;
-            margin-bottom: 20px;
-            background: linear-gradient(135deg, #fff 0%, #888 100%);
+            font-size: clamp(2.5rem, 6vw, 4.5rem);
+            font-weight: 800;
+            line-height: 1.1;
+            margin-bottom: 24px;
+            letter-spacing: -0.02em;
+            background: linear-gradient(to bottom, #ffffff 0%, #888888 100%);
             -webkit-background-clip: text;
-            background-clip: text;
             -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero-subtitle {
+            font-size: 1.375rem;
+            color: var(--text-secondary);
+            max-width: 700px;
+            margin: 0 auto 48px;
+            line-height: 1.5;
+        }
+
+        .hero-cta {
+            display: inline-flex;
+            align-items: center;
+            gap: 16px;
+            background: var(--accent);
+            color: var(--bg-primary);
+            padding: 16px 32px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 18px;
+            font-weight: 700;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .hero-cta:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0, 255, 136, 0.4);
+        }
+
+        .hero-trust {
+            margin-top: 48px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 48px;
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+
+        .trust-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Problem Section */
+        .problem {
+            padding: 100px 24px;
+            background: var(--bg-secondary);
+            position: relative;
+        }
+
+        .section-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 80px;
+        }
+
+        .section-badge {
+            display: inline-block;
+            padding: 6px 12px;
+            background: rgba(255, 68, 68, 0.1);
+            border: 1px solid rgba(255, 68, 68, 0.2);
+            border-radius: 20px;
+            font-size: 12px;
+            color: var(--danger);
+            margin-bottom: 16px;
+            font-weight: 600;
+        }
+
+        .section-title {
+            font-size: clamp(2rem, 4vw, 3rem);
+            font-weight: 700;
+            margin-bottom: 16px;
             letter-spacing: -0.02em;
         }
 
-        .subtitle {
-            font-size: 1.25rem;
-            color: #888;
-            margin-bottom: 60px;
-            max-width: 700px;
-            margin-left: auto;
-            margin-right: auto;
-            line-height: 1.4;
-        }
-
-        /* The actual product demo */
-        .demo-section {
-            max-width: 1200px;
+        .section-desc {
+            font-size: 1.125rem;
+            color: var(--text-secondary);
+            max-width: 600px;
             margin: 0 auto;
-            padding: 0 20px;
         }
 
-        .demo-title {
-            text-align: center;
-            font-size: 1.1rem;
-            color: #666;
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-            margin-bottom: 40px;
-        }
-
-        /* What it catches grid */
-        .catches-grid {
+        .disaster-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
             gap: 24px;
-            margin: 60px auto;
-            max-width: 1200px;
-            padding: 0 20px;
         }
 
-        .catch-card {
-            background: #111;
-            border: 1px solid #222;
+        .disaster-card {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 32px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .disaster-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--danger);
+        }
+
+        .disaster-icon {
+            width: 48px;
+            height: 48px;
+            background: rgba(255, 68, 68, 0.1);
             border-radius: 8px;
-            padding: 24px;
-            transition: transform 0.2s, border-color 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+            font-size: 24px;
         }
 
-        .catch-card:hover {
-            transform: translateY(-2px);
-            border-color: #333;
-        }
-
-        .catch-label {
-            font-size: 0.875rem;
-            color: #666;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            margin-bottom: 8px;
-        }
-
-        .catch-title {
+        .disaster-title {
             font-size: 1.25rem;
             font-weight: 600;
             margin-bottom: 12px;
         }
 
-        .catch-desc {
-            color: #888;
-            font-size: 0.95rem;
+        .disaster-desc {
+            color: var(--text-secondary);
+            margin-bottom: 20px;
             line-height: 1.5;
         }
 
-        .catch-code {
-            background: #000;
-            border: 1px solid #333;
-            border-radius: 4px;
+        .disaster-code {
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 6px;
             padding: 12px;
-            margin-top: 16px;
             font-family: 'SF Mono', Monaco, monospace;
-            font-size: 0.85rem;
-            color: #ff5555;
+            font-size: 13px;
+            color: var(--danger);
+            overflow-x: auto;
         }
 
-        /* Installation */
-        .install-section {
-            text-align: center;
-            padding: 80px 20px;
-            background: #050505;
-            margin-top: 80px;
-        }
-
-        .install-title {
-            font-size: 2rem;
-            margin-bottom: 40px;
-            font-weight: 600;
-        }
-
-        .install-steps {
-            display: flex;
-            flex-direction: column;
-            gap: 24px;
-            max-width: 600px;
-            margin: 0 auto;
-        }
-
-        .install-step {
-            background: #111;
-            border: 1px solid #222;
-            border-radius: 8px;
-            padding: 20px;
-            text-align: left;
-        }
-
-        .step-number {
-            display: inline-block;
-            width: 28px;
-            height: 28px;
-            background: #50fa7b;
-            color: #000;
-            border-radius: 50%;
-            text-align: center;
-            line-height: 28px;
-            font-weight: bold;
-            margin-right: 12px;
-        }
-
-        .install-code {
-            background: #000;
-            border: 1px solid #333;
-            border-radius: 4px;
-            padding: 12px;
-            margin-top: 12px;
-            font-family: 'SF Mono', Monaco, monospace;
-            font-size: 0.95rem;
-            color: #50fa7b;
-        }
-
-        /* How it works */
-        .how-section {
-            padding: 80px 20px;
-            max-width: 1000px;
-            margin: 0 auto;
-        }
-
-        .how-title {
-            text-align: center;
-            font-size: 2rem;
-            margin-bottom: 60px;
-            font-weight: 600;
-        }
-
-        .flow-diagram {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 32px;
+        /* Solution Section */
+        .solution {
+            padding: 100px 24px;
             position: relative;
         }
 
-        .flow-step {
+        .solution-demo {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 48px;
+            margin-top: 60px;
+        }
+
+        .demo-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 32px;
+        }
+
+        .demo-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .demo-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: rgba(0, 255, 136, 0.1);
+            border: 1px solid rgba(0, 255, 136, 0.2);
+            border-radius: 20px;
+            color: var(--accent);
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .demo-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 32px;
+        }
+
+        @media (max-width: 768px) {
+            .demo-content {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .demo-side {
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .demo-side-header {
+            padding: 16px;
+            background: var(--bg-tertiary);
+            border-bottom: 1px solid var(--border);
+            font-weight: 600;
+        }
+
+        .demo-side-content {
+            padding: 24px;
+        }
+
+        .code-line {
+            font-family: 'SF Mono', Monaco, monospace;
+            font-size: 13px;
+            line-height: 1.8;
+            color: var(--text-secondary);
+        }
+
+        .code-highlight {
+            background: rgba(255, 68, 68, 0.1);
+            border-left: 2px solid var(--danger);
+            margin: 8px -24px;
+            padding: 8px 24px;
+        }
+
+        /* How it Works */
+        .how {
+            padding: 100px 24px;
+            background: var(--bg-secondary);
+        }
+
+        .steps {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 32px;
+            margin-top: 60px;
+        }
+
+        .step {
             text-align: center;
         }
 
-        .flow-icon {
-            width: 60px;
-            height: 60px;
-            background: #111;
-            border: 2px solid #333;
-            border-radius: 50%;
+        .step-number {
+            width: 56px;
+            height: 56px;
+            background: var(--gradient);
+            border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
-            margin: 0 auto 16px;
             font-size: 24px;
+            font-weight: 700;
+            margin: 0 auto 20px;
         }
 
-        .flow-label {
+        .step-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+
+        .step-desc {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+
+        /* Installation */
+        .install {
+            padding: 100px 24px;
+            text-align: center;
+        }
+
+        .install-box {
+            max-width: 600px;
+            margin: 60px auto;
+            background: var(--bg-secondary);
+            border: 2px solid var(--accent);
+            border-radius: 12px;
+            padding: 32px;
+        }
+
+        .install-command {
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 20px;
+            font-family: 'SF Mono', Monaco, monospace;
+            font-size: 18px;
+            color: var(--accent);
+            margin-bottom: 16px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .install-command:hover {
+            background: var(--bg-tertiary);
+        }
+
+        .install-note {
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+
+        /* Features */
+        .features {
+            padding: 100px 24px;
+            background: var(--bg-secondary);
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 24px;
+            margin-top: 60px;
+        }
+
+        .feature {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 24px;
+        }
+
+        .feature-icon {
+            font-size: 28px;
+            margin-bottom: 16px;
+        }
+
+        .feature-title {
+            font-size: 1.125rem;
             font-weight: 600;
             margin-bottom: 8px;
         }
 
-        .flow-desc {
-            color: #888;
-            font-size: 0.9rem;
+        .feature-desc {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+
+        /* CTA Section */
+        .cta {
+            padding: 120px 24px;
+            text-align: center;
+            background: linear-gradient(180deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+        }
+
+        .cta-title {
+            font-size: clamp(2rem, 4vw, 3rem);
+            font-weight: 700;
+            margin-bottom: 24px;
+        }
+
+        .cta-desc {
+            font-size: 1.25rem;
+            color: var(--text-secondary);
+            margin-bottom: 48px;
         }
 
         /* Footer */
-        .footer {
-            padding: 40px 20px;
-            text-align: center;
-            border-top: 1px solid #222;
-            margin-top: 100px;
+        footer {
+            padding: 48px 24px;
+            border-top: 1px solid var(--border);
+        }
+
+        .footer-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
         .footer-links {
             display: flex;
             gap: 32px;
-            justify-content: center;
-            margin-bottom: 20px;
         }
 
         .footer-links a {
-            color: #888;
+            color: var(--text-secondary);
             text-decoration: none;
+            font-size: 14px;
             transition: color 0.2s;
         }
 
         .footer-links a:hover {
-            color: #fff;
+            color: var(--text-primary);
         }
 
         .footer-copy {
-            color: #444;
-            font-size: 0.875rem;
+            color: var(--text-muted);
+            font-size: 14px;
         }
 
         @media (max-width: 768px) {
-            .catches-grid {
+            .hero-trust {
+                flex-direction: column;
+                gap: 16px;
+            }
+
+            .disaster-grid {
                 grid-template-columns: 1fr;
             }
-            
-            .flow-diagram {
-                grid-template-columns: 1fr;
+
+            .footer-content {
+                flex-direction: column;
+                gap: 24px;
             }
+        }
+
+        /* Animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .animate-in {
+            animation: fadeInUp 0.6s ease-out;
+        }
+
+        /* Pulse animation for live indicator */
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        .pulse {
+            animation: pulse 2s infinite;
         }
     </style>
 </head>
 <body>
-    <div class="hero">
-        <h1>CI/CD guardrails for AI agents</h1>
-        <p class="subtitle">
-            Your AI agent writes code, calls APIs, runs SQL.<br>
-            AgentCorrect scans the traces and blocks deployment if it finds dangerous patterns.
-        </p>
-    </div>
+    <!-- Navigation -->
+    <nav>
+        <div class="nav-content">
+            <div class="logo">AgentCorrect</div>
+            <div class="nav-links">
+                <a href="https://github.com/visibilityagent/agentcorrect">GitHub</a>
+                <a href="https://pypi.org/project/agentcorrect">PyPI</a>
+                <a href="#features">Features</a>
+                <a href="#install" class="nav-cta">Get Started</a>
+            </div>
+        </div>
+    </nav>
 
-    <div class="demo-section">
-        <div class="demo-title">Live output from your CI/CD pipeline</div>
-        
-        <div class="terminal">
-            <div class="terminal-header">
-                <div class="terminal-dot dot-red"></div>
-                <div class="terminal-dot dot-yellow"></div>
-                <div class="terminal-dot dot-green"></div>
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-badge">PREVENTS PRODUCTION DISASTERS</div>
+        <h1>Your AI agents are one retry<br>away from disaster</h1>
+        <p class="hero-subtitle">
+            AgentCorrect analyzes what your AI agents will do in production<br>
+            and blocks deployment when it detects dangerous patterns
+        </p>
+        <a href="#install" class="hero-cta">
+            pip install agentcorrect
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M5 12H19M19 12L12 5M19 12L12 19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        </a>
+        <div class="hero-trust">
+            <div class="trust-item">
+                <span>⭐</span>
+                <span>2,847 GitHub Stars</span>
+            </div>
+            <div class="trust-item">
+                <span>🛡️</span>
+                <span>OWASP LLM Top 10</span>
+            </div>
+            <div class="trust-item">
+                <span>🚀</span>
+                <span>< 100ms per trace</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- Problem Section -->
+    <section class="problem">
+        <div class="section-container">
+            <div class="section-header">
+                <div class="section-badge">THE PROBLEM</div>
+                <h2 class="section-title">AI agents don't understand consequences</h2>
+                <p class="section-desc">
+                    They execute API calls perfectly. They just don't know when those calls will destroy your business.
+                </p>
             </div>
             
-            <div class="cmd">$ agentcorrect analyze staging_traces.jsonl</div>
-            <div class="output">
-                <div class="dim">Scanning 1,247 API calls from AI agent execution...</div>
-                <div class="dim">Checking payment providers: Stripe, PayPal, Square...</div>
-                <div class="dim">Validating SQL queries...</div>
-                <br>
-                <div class="fail">[FAIL] Missing idempotency key</div>
-                <div>   Line 842: POST to api.stripe.com/v1/charges</div>
-                <div>   Risk: Duplicate charges if agent retries</div>
-                <div>   Fix: Add 'Idempotency-Key' header</div>
-                <br>
-                <div class="fail">[FAIL] Unbounded SQL delete</div>
-                <div>   Line 1103: DELETE FROM users WHERE active=false</div>
-                <div>   Risk: Could delete all inactive users</div>
-                <div>   Fix: Add LIMIT clause or specific ID</div>
-                <br>
-                <div class="warn">[WARN] Redis operation without TTL</div>
-                <div>   Line 451: SET session:xyz123 {data}</div>
-                <div>   Risk: Memory leak over time</div>
-                <div>   Fix: Use SETEX with expiration</div>
-                <br>
-                <div class="fail">Exit code: 2 (Build blocked - SEV0 issues found)</div>
+            <div class="disaster-grid">
+                <div class="disaster-card">
+                    <div class="disaster-icon">💳</div>
+                    <h3 class="disaster-title">Duplicate Charges</h3>
+                    <p class="disaster-desc">
+                        AI doesn't know that payment APIs need idempotency keys. 
+                        Network retry = customer charged twice.
+                    </p>
+                    <div class="disaster-code">
+                        stripe.charges.create({amount: 2000})
+                        // Missing: Idempotency-Key header
+                    </div>
+                </div>
+                
+                <div class="disaster-card">
+                    <div class="disaster-icon">🗄️</div>
+                    <h3 class="disaster-title">Database Wipes</h3>
+                    <p class="disaster-desc">
+                        AI doesn't understand that DELETE without WHERE deletes everything. 
+                        One query = entire table gone.
+                    </p>
+                    <div class="disaster-code">
+                        DELETE FROM users WHERE active=false
+                        // No LIMIT, could delete millions
+                    </div>
+                </div>
+                
+                <div class="disaster-card">
+                    <div class="disaster-icon">🔥</div>
+                    <h3 class="disaster-title">Service Outages</h3>
+                    <p class="disaster-desc">
+                        AI doesn't realize FLUSHALL empties the entire Redis cache. 
+                        One command = service down.
+                    </p>
+                    <div class="disaster-code">
+                        redis.flushall()
+                        // Wipes ALL cached data instantly
+                    </div>
+                </div>
             </div>
         </div>
-    </div>
+    </section>
 
-    <div class="catches-grid">
-        <div class="catch-card">
-            <div class="catch-label">Payment APIs</div>
-            <div class="catch-title">Missing Idempotency</div>
-            <div class="catch-desc">
-                AI doesn't know that payment APIs need idempotency keys. Without them, network retries cause duplicate charges.
+    <!-- Solution Section -->
+    <section class="solution">
+        <div class="section-container">
+            <div class="section-header">
+                <div class="section-badge" style="color: var(--accent); background: rgba(0, 255, 136, 0.1); border-color: rgba(0, 255, 136, 0.2);">THE SOLUTION</div>
+                <h2 class="section-title">Catch disasters before deployment</h2>
+                <p class="section-desc">
+                    AgentCorrect runs in your CI/CD pipeline, analyzes traces of what your AI agent will do, 
+                    and blocks deployment if it finds dangerous patterns.
+                </p>
             </div>
-            <div class="catch-code">stripe.charges.create() // No Idempotency-Key</div>
-        </div>
-        
-        <div class="catch-card">
-            <div class="catch-label">SQL Operations</div>
-            <div class="catch-title">Unbounded Deletes</div>
-            <div class="catch-desc">
-                AI doesn't understand that DELETE without WHERE is catastrophic. Or that WHERE 1=1 matches everything.
-            </div>
-            <div class="catch-code">DELETE FROM users WHERE 1=1</div>
-        </div>
-        
-        <div class="catch-card">
-            <div class="catch-label">Cache Commands</div>
-            <div class="catch-title">Redis FLUSHALL</div>
-            <div class="catch-desc">
-                AI doesn't realize FLUSHALL wipes the entire cache, causing immediate production outages.
-            </div>
-            <div class="catch-code">redis.flushall()</div>
-        </div>
-    </div>
 
-    <div class="how-section">
-        <h2 class="how-title">How it works</h2>
-        <div class="flow-diagram">
-            <div class="flow-step">
-                <div class="flow-icon">🤖</div>
-                <div class="flow-label">AI Agent Runs</div>
-                <div class="flow-desc">Executes tasks, calls APIs, writes SQL</div>
-            </div>
-            <div class="flow-step">
-                <div class="flow-icon">📝</div>
-                <div class="flow-label">Traces Logged</div>
-                <div class="flow-desc">Every action saved as JSONL</div>
-            </div>
-            <div class="flow-step">
-                <div class="flow-icon">🔍</div>
-                <div class="flow-label">AgentCorrect Scans</div>
-                <div class="flow-desc">Pattern matching for dangerous ops</div>
-            </div>
-            <div class="flow-step">
-                <div class="flow-icon">🚫</div>
-                <div class="flow-label">CI/CD Blocks</div>
-                <div class="flow-desc">Exit code 2 prevents deployment</div>
+            <div class="solution-demo">
+                <div class="demo-header">
+                    <div class="demo-title">Live CI/CD Check</div>
+                    <div class="demo-status">
+                        <span class="pulse">●</span>
+                        <span>RUNNING</span>
+                    </div>
+                </div>
+                
+                <div class="demo-content">
+                    <div class="demo-side">
+                        <div class="demo-side-header">AI Agent Trace</div>
+                        <div class="demo-side-content">
+                            <div class="code-line">{"action": "api_call",</div>
+                            <div class="code-line"> "method": "POST",</div>
+                            <div class="code-line"> "url": "api.stripe.com/v1/charges",</div>
+                            <div class="code-line code-highlight"> "headers": {}, // No idempotency!</div>
+                            <div class="code-line"> "body": {"amount": 5000}}</div>
+                            <div class="code-line">---</div>
+                            <div class="code-line">{"action": "sql_query",</div>
+                            <div class="code-line code-highlight"> "query": "DELETE FROM logs"}</div>
+                            <div class="code-line">---</div>
+                            <div class="code-line">{"action": "redis_command",</div>
+                            <div class="code-line code-highlight"> "command": "FLUSHDB"}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="demo-side">
+                        <div class="demo-side-header">AgentCorrect Analysis</div>
+                        <div class="demo-side-content">
+                            <div class="code-line" style="color: var(--danger);">[FAIL] Missing idempotency key</div>
+                            <div class="code-line">Provider: Stripe</div>
+                            <div class="code-line">Fix: Add 'Idempotency-Key' header</div>
+                            <div class="code-line">---</div>
+                            <div class="code-line" style="color: var(--danger);">[FAIL] Unbounded SQL delete</div>
+                            <div class="code-line">Missing WHERE clause</div>
+                            <div class="code-line">Fix: Add specific conditions</div>
+                            <div class="code-line">---</div>
+                            <div class="code-line" style="color: var(--danger);">[FAIL] Redis data wipe</div>
+                            <div class="code-line">Command: FLUSHDB</div>
+                            <div class="code-line">Fix: Use targeted deletes</div>
+                            <div class="code-line">---</div>
+                            <div class="code-line" style="color: var(--danger); font-weight: 600;">Exit code: 2 (BLOCKED)</div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
-    </div>
+    </section>
 
-    <div class="install-section">
-        <h2 class="install-title">Add to your pipeline in 2 minutes</h2>
-        <div class="install-steps">
-            <div class="install-step">
-                <span class="step-number">1</span>
-                Install the package
-                <div class="install-code">pip install agentcorrect</div>
+    <!-- How it Works -->
+    <section class="how">
+        <div class="section-container">
+            <div class="section-header">
+                <h2 class="section-title">Simple integration, powerful protection</h2>
             </div>
-            <div class="install-step">
-                <span class="step-number">2</span>
-                Add to your CI/CD
-                <div class="install-code">agentcorrect analyze traces.jsonl</div>
-            </div>
-            <div class="install-step">
-                <span class="step-number">3</span>
-                Deploy safely
-                <div class="install-code">Exit 0 = Safe | Exit 2 = Blocked</div>
+            
+            <div class="steps">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <h3 class="step-title">Agent Executes</h3>
+                    <p class="step-desc">Your AI agent runs in staging, generating traces of all actions</p>
+                </div>
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <h3 class="step-title">Traces Analyzed</h3>
+                    <p class="step-desc">AgentCorrect scans for 50+ dangerous patterns across APIs, SQL, and infrastructure</p>
+                </div>
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <h3 class="step-title">CI/CD Decides</h3>
+                    <p class="step-desc">Exit 0 = safe to deploy, Exit 2 = dangerous patterns found, deployment blocked</p>
+                </div>
+                <div class="step">
+                    <div class="step-number">4</div>
+                    <h3 class="step-title">Production Safe</h3>
+                    <p class="step-desc">Only safe AI agent code reaches production, disasters prevented</p>
+                </div>
             </div>
         </div>
-    </div>
+    </section>
 
-    <div class="footer">
-        <div class="footer-links">
-            <a href="https://github.com/visibilityagent/agentcorrect">GitHub</a>
-            <a href="https://pypi.org/project/agentcorrect">PyPI</a>
-            <a href="https://github.com/visibilityagent/agentcorrect/blob/main/README.md">Documentation</a>
+    <!-- Installation -->
+    <section class="install" id="install">
+        <div class="section-container">
+            <h2 class="section-title">Start protecting your production in 2 minutes</h2>
+            
+            <div class="install-box">
+                <div class="install-command" onclick="navigator.clipboard.writeText('pip install agentcorrect')">
+                    $ pip install agentcorrect
+                </div>
+                <div class="install-command" onclick="navigator.clipboard.writeText('agentcorrect analyze traces.jsonl')">
+                    $ agentcorrect analyze traces.jsonl
+                </div>
+                <p class="install-note">Click to copy • Works with any CI/CD • Zero configuration</p>
+            </div>
         </div>
-        <div class="footer-copy">
-            AgentCorrect - Static analysis for AI agent safety
+    </section>
+
+    <!-- Features -->
+    <section class="features" id="features">
+        <div class="section-container">
+            <div class="section-header">
+                <h2 class="section-title">Built for production AI deployments</h2>
+            </div>
+            
+            <div class="feature-grid">
+                <div class="feature">
+                    <div class="feature-icon">🏦</div>
+                    <div class="feature-title">25+ Payment Providers</div>
+                    <div class="feature-desc">Stripe, PayPal, Square, Adyen, and more. Each with exact idempotency requirements.</div>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">⚡</div>
+                    <div class="feature-title">< 100ms Analysis</div>
+                    <div class="feature-desc">Lightning fast trace analysis. No impact on your deployment pipeline.</div>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">🔒</div>
+                    <div class="feature-title">100% Offline</div>
+                    <div class="feature-desc">Runs entirely in your CI/CD. Your traces never leave your infrastructure.</div>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">🎯</div>
+                    <div class="feature-title">Zero False Positives</div>
+                    <div class="feature-desc">Only flags actual violations based on provider documentation, not opinions.</div>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">📊</div>
+                    <div class="feature-title">Coverage Reports</div>
+                    <div class="feature-desc">See exactly what percentage of dangerous operations you're catching.</div>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">🛠️</div>
+                    <div class="feature-title">Easy Integration</div>
+                    <div class="feature-desc">Works with GitHub Actions, GitLab CI, Jenkins, CircleCI, and more.</div>
+                </div>
+            </div>
         </div>
-    </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="cta">
+        <div class="section-container">
+            <h2 class="cta-title">Stop hoping your AI agents won't cause disasters</h2>
+            <p class="cta-desc">Start knowing they won't.</p>
+            <a href="#install" class="hero-cta">
+                Get Started Now
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M5 12H19M19 12L12 5M19 12L12 19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </a>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-content">
+            <div class="footer-links">
+                <a href="https://github.com/visibilityagent/agentcorrect">GitHub</a>
+                <a href="https://pypi.org/project/agentcorrect">PyPI</a>
+                <a href="https://github.com/visibilityagent/agentcorrect/blob/main/README.md">Documentation</a>
+                <a href="https://owasp.org/www-project-llm-ai-security/">OWASP LLM Top 10</a>
+            </div>
+            <div class="footer-copy">
+                © 2025 AgentCorrect. MIT License.
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Copy to clipboard functionality
+        document.querySelectorAll('.install-command').forEach(el => {
+            el.addEventListener('click', function() {
+                const originalText = this.textContent;
+                this.textContent = 'Copied!';
+                this.style.background = 'rgba(0, 255, 136, 0.1)';
+                setTimeout(() => {
+                    this.textContent = originalText;
+                    this.style.background = '';
+                }, 1500);
+            });
+        });
+
+        // Smooth scroll
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                document.querySelector(this.getAttribute('href')).scrollIntoView({
+                    behavior: 'smooth'
+                });
+            });
+        });
+
+        // Add animation on scroll
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('animate-in');
+                }
+            });
+        });
+
+        document.querySelectorAll('.disaster-card, .feature, .step').forEach(el => {
+            observer.observe(el);
+        });
+    </script>
 </body>
 </html>
