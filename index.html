@@ -19,9 +19,9 @@
 
         body {
             font-family: 'Inter', system-ui, -apple-system, sans-serif;
-            background: #0a0a0a;
-            color: #e5e5e5;
-            font-size: 17px;
+            background: #ffffff;
+            color: #000000;
+            font-size: 18px;
             line-height: 1.7;
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
@@ -42,43 +42,42 @@
             font-size: 22px;
             font-weight: 700;
             letter-spacing: -0.5px;
-            color: #ffffff;
+            color: #000000;
             display: inline-block;
         }
 
         /* Main */
         h1 {
-            font-size: 56px;
-            line-height: 1.05;
-            margin-bottom: 24px;
+            font-size: 48px;
+            line-height: 1.1;
+            margin-bottom: 20px;
             font-weight: 800;
-            letter-spacing: -1.5px;
-            color: #ffffff;
+            letter-spacing: -1px;
+            color: #000000;
         }
 
         .lead {
-            font-size: 22px;
-            color: #9ca3af;
+            font-size: 20px;
+            color: #4b5563;
             margin-bottom: 32px;
             font-weight: 400;
-            letter-spacing: -0.3px;
         }
         
         .tech-badges {
             display: flex;
-            gap: 12px;
-            margin-bottom: 60px;
+            gap: 8px;
+            margin-bottom: 40px;
             flex-wrap: wrap;
         }
         
         .tech-badge {
-            background: #1a1a1a;
-            color: #9ca3af;
-            padding: 8px 16px;
-            border-radius: 8px;
-            font-size: 14px;
-            font-weight: 500;
-            border: 1px solid #262626;
+            background: transparent;
+            color: #6b7280;
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-size: 13px;
+            font-weight: 400;
+            border: 1px solid #d1d5db;
         }
 
         /* Before/After */
@@ -94,14 +93,14 @@
             padding: 32px;
             position: relative;
             overflow: hidden;
-            background: #111111;
-            border: 1px solid #262626;
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
             transition: transform 0.2s ease, border-color 0.2s ease;
         }
         
         .box:hover {
             transform: translateY(-2px);
-            border-color: #404040;
+            border-color: #d1d5db;
         }
 
         .box-title {
@@ -116,8 +115,8 @@
         }
 
         .without {
-            border: 1px solid #7f1d1d;
-            background: #1a0505;
+            border: 2px solid #fca5a5;
+            background: #fef2f2;
         }
 
         .without .box-title {
@@ -135,8 +134,8 @@
         }
 
         .with {
-            border: 1px solid #14532d;
-            background: #052e16;
+            border: 2px solid #86efac;
+            background: #f0fdf4;
         }
 
         .with .box-title {
@@ -156,14 +155,12 @@
         .code {
             font-family: 'JetBrains Mono', 'SF Mono', Monaco, monospace;
             font-size: 13px;
-            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            background: #1e293b;
             color: #e2e8f0;
-            padding: 24px;
-            border-radius: 12px;
+            padding: 20px;
+            border-radius: 8px;
             overflow-x: auto;
-            line-height: 1.6;
-            box-shadow: inset 0 2px 4px 0 rgb(0 0 0 / 0.2);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            line-height: 1.5;
         }
 
         .comment {
@@ -186,6 +183,39 @@
         }
 
         /* Install */
+        /* Quick install at top */
+        .quick-install {
+            background: #f8fafc;
+            border: 2px solid #000;
+            border-radius: 8px;
+            padding: 20px 24px;
+            margin: 32px 0;
+            max-width: 600px;
+        }
+        
+        .install-line {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin: 8px 0;
+        }
+        
+        .install-label {
+            font-weight: 600;
+            color: #4b5563;
+            min-width: 80px;
+        }
+        
+        .install-cmd {
+            background: #000;
+            color: #fff;
+            padding: 8px 16px;
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            flex: 1;
+        }
+        
         .install {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             border-radius: 20px;
@@ -303,9 +333,10 @@
         .step {
             text-align: center;
             padding: 24px;
-            background: #1a1a1a;
-            border-radius: 16px;
-            border: 1px solid #262626;
+            background: #ffffff;
+            border-radius: 12px;
+            border: 1px solid #e5e7eb;
+            box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
         }
         
         .step-number {
@@ -379,7 +410,7 @@
             font-weight: 600;
             margin-bottom: 8px;
             font-size: 18px;
-            color: #ffffff;
+            color: #111827;
         }
 
         .feature-desc {
@@ -396,18 +427,14 @@
 
         .button {
             display: inline-block;
-            background: #ffffff;
-            color: #000000;
-            padding: 18px 48px;
-            border-radius: 12px;
+            background: #000000;
+            color: #ffffff;
+            padding: 16px 40px;
+            border-radius: 8px;
             text-decoration: none;
             font-weight: 600;
-            font-size: 17px;
-            letter-spacing: -0.2px;
-            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.2), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
+            font-size: 16px;
+            transition: all 0.2s ease;
         }
         
         .button::before {
@@ -422,12 +449,8 @@
         }
 
         .button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.25), 0 8px 10px -6px rgb(0 0 0 / 0.15);
-        }
-        
-        .button:hover::before {
-            left: 100%;
+            background: #1f2937;
+            transform: translateY(-1px);
         }
 
         /* Footer */
@@ -455,7 +478,7 @@
         }
 
         .links a:hover {
-            color: #ffffff;
+            color: #111827;
         }
 
         /* Mobile */
@@ -631,8 +654,8 @@
         }
         
         .disaster-card {
-            background: #111111;
-            border: 1px solid #262626;
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
             border-radius: 12px;
             padding: 24px;
             text-align: left;
@@ -656,7 +679,7 @@
             font-weight: 700;
             font-size: 18px;
             margin-bottom: 8px;
-            color: #ffffff;
+            color: #111827;
         }
         
         .disaster-desc {
@@ -684,16 +707,29 @@
         <main>
             <h1>Your AI agent is about to charge someone's credit card 5 times</h1>
             <p class="lead">Because it forgot to add an idempotency key. <em>Again.</em></p>
+            
+            <!-- Install immediately visible -->
+            <div class="quick-install">
+                <div class="install-line">
+                    <span class="install-label">Fix it now:</span>
+                    <code class="install-cmd">pip install agentcorrect</code>
+                </div>
+                <div class="install-line">
+                    <span class="install-label">Then run:</span>
+                    <code class="install-cmd">agentcorrect analyze your-traces.jsonl</code>
+                </div>
+            </div>
+            
             <div class="tech-badges">
-                <span class="tech-badge">Works with LangSmith traces</span>
-                <span class="tech-badge">Works with LangFuse traces</span>
-                <span class="tech-badge">Works with OpenTelemetry</span>
-                <span class="tech-badge">Works with any JSONL format</span>
+                <span class="tech-badge">LangSmith</span>
+                <span class="tech-badge">LangFuse</span>
+                <span class="tech-badge">OpenTelemetry</span>
+                <span class="tech-badge">JSONL</span>
             </div>
 
             <!-- Live Demo Section -->
             <div class="demo-section">
-                <h2 class="demo-title">Watch the disaster happen in real-time</h2>
+                <h2 class="demo-title">What happens without AgentCorrect:</h2>
                 <div class="demo-container">
                     <div class="terminal">
                         <div class="terminal-header">
@@ -801,21 +837,17 @@ $ agentcorrect analyze agent_traces.jsonl
                 </div>
             </div>
 
+
+            <!-- Big install section -->
             <div class="install">
-                <div class="install-title">Start catching disasters in 30 seconds</div>
+                <div class="install-title">Stop disasters before production</div>
                 <div class="commands">
                     <div class="cmd">pip install agentcorrect</div>
-                    <div class="cmd">agentcorrect analyze your-traces.jsonl</div>
+                    <div class="cmd">agentcorrect analyze traces.jsonl</div>
                 </div>
-                <p style="font-size: 15px; color: rgba(255,255,255,0.9); margin-top: 24px; font-weight: 500;">
-                    Works with LangSmith, LangFuse, OpenTelemetry (OTEL) traces
+                <p style="font-size: 14px; color: rgba(255,255,255,0.8); margin-top: 20px;">
+                    Exit code 2 = Build fails. Disaster prevented.
                 </p>
-                <div class="privacy-badges">
-                    <span class="badge">Zero data storage</span>
-                    <span class="badge">100% deterministic</span>
-                    <span class="badge">No AI/ML = No hallucinations</span>
-                    <span class="badge">Zero false positives</span>
-                </div>
             </div>
 
             <!-- How It Works Section -->
