@@ -1,0 +1,7 @@
+wrangler.toml
+.git
+.gitignore
+README.md
+*.log
+node_modules
+src
