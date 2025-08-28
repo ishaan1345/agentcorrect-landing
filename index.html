@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AgentCorrect - Test your AI agents before they break production</title>
-    <meta name="description" content="CI/CD safety checks for AI agents. Analyze traces, catch disasters, block deployments. Never ship an agent that charges twice or deletes data.">
+    <title>AgentCorrect - Catch disasters before your CEO does</title>
+    <meta name="description" content="Your AI agent is about to charge someone 47 times. AgentCorrect stops it. Exit code 2. Deploy blocked. Crisis averted.">
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -19,27 +19,26 @@
 
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: #FFFFFF;
-            color: #000000;
-            line-height: 1.6;
+            background: #000;
+            color: #FFF;
             overflow-x: hidden;
         }
 
-        /* Navigation */
-        nav {
+        /* Header */
+        .header {
             position: fixed;
             top: 0;
             left: 0;
             right: 0;
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border-bottom: 1px solid #E5E7EB;
+            padding: 20px 0;
             z-index: 1000;
-            padding: 16px 0;
+            background: rgba(0,0,0,0.8);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
         }
 
-        .nav-container {
-            max-width: 1280px;
+        .header-inner {
+            max-width: 1200px;
             margin: 0 auto;
             padding: 0 24px;
             display: flex;
@@ -48,287 +47,121 @@
         }
 
         .logo {
-            font-size: 20px;
-            font-weight: 800;
-            letter-spacing: -0.5px;
+            font-size: 18px;
+            font-weight: 700;
         }
 
-        .nav-links {
-            display: flex;
-            gap: 32px;
-            align-items: center;
-        }
-
-        .nav-links a {
-            color: #6B7280;
+        .github-link {
+            color: #888;
             text-decoration: none;
             font-size: 14px;
-            font-weight: 500;
             transition: color 0.2s;
         }
 
-        .nav-links a:hover {
-            color: #000;
-        }
-
-        .github-btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 8px 16px;
-            background: #000;
+        .github-link:hover {
             color: #FFF;
-            border-radius: 8px;
-            text-decoration: none;
-            font-size: 14px;
-            font-weight: 500;
-            transition: transform 0.2s;
-        }
-
-        .github-btn:hover {
-            transform: translateY(-2px);
         }
 
         /* Hero */
         .hero {
             min-height: 100vh;
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 120px 24px 80px;
-            background: linear-gradient(180deg, #FFFFFF 0%, #F8F9FA 100%);
-        }
-
-        .hero-inner {
-            max-width: 1280px;
-            width: 100%;
+            padding: 120px 24px 60px;
             text-align: center;
         }
 
-        .hero-badge {
-            display: inline-block;
-            padding: 6px 14px;
-            background: #FEF3C7;
-            color: #92400E;
-            border-radius: 100px;
-            font-size: 13px;
-            font-weight: 600;
-            margin-bottom: 24px;
+        .hero-content {
+            max-width: 1200px;
+            width: 100%;
         }
 
-        .hero-headline {
-            font-size: clamp(48px, 7vw, 84px);
+        /* Big Fucking Headline */
+        .headline {
+            font-size: clamp(56px, 10vw, 120px);
             font-weight: 900;
-            line-height: 1.05;
-            letter-spacing: -0.03em;
-            margin-bottom: 24px;
-            background: linear-gradient(135deg, #000000 0%, #434343 100%);
+            line-height: 0.9;
+            letter-spacing: -0.04em;
+            margin-bottom: 32px;
+            background: linear-gradient(to bottom, #FFF 0%, #888 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
         }
 
-        .hero-subtitle {
-            font-size: 22px;
-            color: #6B7280;
+        .subheadline {
+            font-size: 24px;
+            color: #888;
             max-width: 800px;
             margin: 0 auto 48px;
-            line-height: 1.5;
+            line-height: 1.4;
         }
 
-        .hero-cta {
-            display: flex;
+        /* Install */
+        .install {
+            display: inline-flex;
+            align-items: center;
             gap: 16px;
-            justify-content: center;
-            flex-wrap: wrap;
-            margin-bottom: 32px;
+            padding: 20px 32px;
+            background: #111;
+            border: 1px solid #333;
+            border-radius: 12px;
+            margin-bottom: 80px;
         }
 
-        .btn {
-            padding: 16px 32px;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: 600;
-            text-decoration: none;
-            transition: all 0.2s;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .btn-primary {
-            background: #000;
-            color: #FFF;
-            border: 2px solid #000;
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 24px rgba(0,0,0,0.2);
-        }
-
-        .btn-secondary {
-            background: transparent;
-            color: #000;
-            border: 2px solid #E5E7EB;
-        }
-
-        .btn-secondary:hover {
-            border-color: #000;
-            background: #F9FAFB;
-        }
-
-        .install-cmd {
-            display: inline-flex;
-            align-items: center;
-            gap: 12px;
-            padding: 12px 20px;
-            background: #1F2937;
-            border-radius: 8px;
-            margin-bottom: 64px;
-        }
-
-        .install-cmd code {
+        .install code {
             font-family: 'SF Mono', Monaco, monospace;
+            font-size: 18px;
             color: #FFF;
-            font-size: 14px;
         }
 
-        .copy-btn {
-            padding: 4px 8px;
-            background: #374151;
-            border: none;
-            border-radius: 4px;
-            color: #9CA3AF;
-            font-size: 12px;
+        .copy {
+            padding: 8px 16px;
+            background: #222;
+            border: 1px solid #444;
+            color: #888;
+            border-radius: 6px;
             cursor: pointer;
+            font-size: 14px;
             transition: all 0.2s;
         }
 
-        .copy-btn:hover {
-            background: #4B5563;
+        .copy:hover {
+            background: #333;
             color: #FFF;
         }
 
-        /* Workflow Diagram */
-        .workflow {
-            max-width: 1100px;
+        /* Live Demo */
+        .demo {
+            max-width: 1000px;
+            width: 100%;
             margin: 0 auto;
-            background: #F9FAFB;
+        }
+
+        .terminal {
+            background: #0A0A0A;
+            border: 1px solid #222;
             border-radius: 16px;
-            padding: 48px;
-            border: 1px solid #E5E7EB;
-        }
-
-        .workflow-title {
-            font-size: 20px;
-            font-weight: 700;
-            margin-bottom: 32px;
-            text-align: center;
-        }
-
-        .workflow-steps {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 24px;
-            position: relative;
-        }
-
-        .workflow-step {
-            text-align: center;
-            position: relative;
-        }
-
-        .workflow-icon {
-            width: 80px;
-            height: 80px;
-            margin: 0 auto 16px;
-            background: #FFF;
-            border: 2px solid #E5E7EB;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 32px;
-        }
-
-        .workflow-step.danger .workflow-icon {
-            background: #FEE2E2;
-            border-color: #DC2626;
-        }
-
-        .workflow-step.safe .workflow-icon {
-            background: #D1FAE5;
-            border-color: #059669;
-        }
-
-        .workflow-label {
-            font-size: 14px;
-            font-weight: 600;
-            margin-bottom: 4px;
-        }
-
-        .workflow-desc {
-            font-size: 13px;
-            color: #6B7280;
-        }
-
-        .workflow-arrow {
-            position: absolute;
-            top: 40px;
-            right: -12px;
-            font-size: 24px;
-            color: #D1D5DB;
-        }
-
-        /* Demo Terminal */
-        .demo-section {
-            padding: 96px 24px;
-            background: #000;
-        }
-
-        .demo-container {
-            max-width: 1100px;
-            margin: 0 auto;
-        }
-
-        .demo-header {
-            text-align: center;
-            margin-bottom: 48px;
-        }
-
-        .demo-title {
-            font-size: 48px;
-            font-weight: 900;
-            color: #FFF;
-            margin-bottom: 16px;
-        }
-
-        .demo-subtitle {
-            font-size: 20px;
-            color: #9CA3AF;
-        }
-
-        .terminal-window {
-            background: #0A0E27;
-            border-radius: 12px;
             overflow: hidden;
-            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+            box-shadow: 0 50px 100px -20px rgba(0,0,0,0.8);
         }
 
         .terminal-header {
-            background: #151A36;
-            padding: 14px 20px;
+            background: #111;
+            padding: 16px 20px;
+            border-bottom: 1px solid #222;
             display: flex;
             align-items: center;
             gap: 8px;
-            border-bottom: 1px solid rgba(255,255,255,0.05);
         }
 
         .dot {
             width: 12px;
             height: 12px;
             border-radius: 50%;
+            background: #333;
         }
 
         .dot-red { background: #FF5F57; }
@@ -340,12 +173,11 @@
             font-family: 'SF Mono', Monaco, monospace;
             font-size: 14px;
             line-height: 1.8;
-            min-height: 450px;
-            color: #E2E8F0;
+            min-height: 500px;
         }
 
-        .terminal-line {
-            margin-bottom: 8px;
+        .line {
+            margin-bottom: 12px;
             opacity: 0;
             animation: fadeIn 0.3s forwards;
         }
@@ -354,629 +186,460 @@
             to { opacity: 1; }
         }
 
-        .cmd {
-            color: #64748B;
+        .prompt { color: #666; }
+        .prompt::before { 
+            content: '$ '; 
+            color: #0F0;
         }
 
-        .cmd::before {
-            content: '$ ';
-            color: #22C55E;
-        }
-
-        .analyzing {
-            color: #3B82F6;
+        .scanning { 
+            color: #58A6FF; 
+            margin: 20px 0;
             font-weight: 600;
-            margin: 16px 0;
         }
 
-        .error {
-            background: rgba(239,68,68,0.1);
-            border-left: 3px solid #EF4444;
+        .disaster {
+            background: linear-gradient(90deg, rgba(255,0,0,0.1) 0%, transparent 100%);
+            border-left: 3px solid #F00;
             padding: 16px;
-            margin: 12px 0;
+            margin: 20px 0;
             border-radius: 4px;
         }
 
-        .error-title {
-            color: #F87171;
+        .disaster-title {
+            color: #FF6B6B;
             font-weight: 700;
             margin-bottom: 8px;
+            font-size: 16px;
         }
 
-        .error-detail {
-            color: #CBD5E1;
+        .disaster-detail {
+            color: #AAA;
             padding-left: 20px;
-            margin: 4px 0;
+            margin: 6px 0;
         }
 
-        .fix {
-            color: #10B981;
+        .disaster-fix {
+            color: #4CAF50;
             padding-left: 20px;
-            margin-top: 8px;
+            margin-top: 12px;
             font-weight: 600;
         }
 
-        .exit-status {
+        .exit-code {
+            background: #1A0000;
+            border: 1px solid #F00;
+            padding: 20px;
             margin-top: 32px;
-            padding: 16px;
-            background: rgba(239,68,68,0.1);
-            border: 1px solid rgba(239,68,68,0.3);
             border-radius: 8px;
-            color: #F87171;
+            color: #FF6B6B;
             font-weight: 700;
+            font-size: 18px;
             text-align: center;
         }
 
-        /* How It Works */
-        .how-section {
-            padding: 96px 24px;
-            background: #F9FAFB;
+        /* What Happens Section */
+        .what-happens {
+            padding: 120px 24px;
+            background: #050505;
+            border-top: 1px solid #222;
         }
 
-        .how-container {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-
-        .how-header {
-            text-align: center;
-            margin-bottom: 64px;
-        }
-
-        .how-title {
-            font-size: 48px;
+        .section-title {
+            font-size: 56px;
             font-weight: 900;
-            margin-bottom: 16px;
+            text-align: center;
+            margin-bottom: 80px;
         }
 
-        .how-subtitle {
-            font-size: 20px;
-            color: #6B7280;
-        }
-
-        .how-grid {
+        .scenarios {
+            max-width: 1000px;
+            margin: 0 auto;
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 32px;
+            gap: 60px;
         }
 
-        .how-card {
-            background: #FFF;
-            padding: 32px;
-            border-radius: 12px;
-            border: 1px solid #E5E7EB;
+        .scenario {
+            display: grid;
+            grid-template-columns: 100px 1fr;
+            gap: 40px;
+            align-items: start;
         }
 
-        .how-number {
-            width: 48px;
-            height: 48px;
-            background: #000;
-            color: #FFF;
-            border-radius: 8px;
+        .scenario-number {
+            width: 100px;
+            height: 100px;
+            background: linear-gradient(135deg, #F00 0%, #800 100%);
+            border-radius: 20px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 20px;
-            font-weight: 700;
+            font-size: 48px;
+            font-weight: 900;
+        }
+
+        .scenario-content h3 {
+            font-size: 32px;
+            font-weight: 800;
+            margin-bottom: 16px;
+        }
+
+        .scenario-content p {
+            font-size: 18px;
+            color: #AAA;
+            line-height: 1.6;
             margin-bottom: 20px;
         }
 
-        .how-card h3 {
-            font-size: 20px;
-            font-weight: 700;
-            margin-bottom: 12px;
-        }
-
-        .how-card p {
-            color: #6B7280;
-            line-height: 1.6;
-            margin-bottom: 16px;
-        }
-
-        .how-code {
-            background: #1F2937;
-            color: #10B981;
-            padding: 12px;
-            border-radius: 6px;
-            font-family: 'SF Mono', monospace;
-            font-size: 12px;
-        }
-
-        /* CI/CD Integration */
-        .cicd-section {
-            padding: 96px 24px;
-        }
-
-        .cicd-container {
-            max-width: 1000px;
-            margin: 0 auto;
-        }
-
-        .cicd-header {
-            text-align: center;
-            margin-bottom: 48px;
-        }
-
-        .cicd-title {
-            font-size: 48px;
-            font-weight: 900;
-            margin-bottom: 16px;
-        }
-
-        .cicd-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 32px;
-        }
-
-        .cicd-card {
-            background: #F9FAFB;
-            padding: 32px;
-            border-radius: 12px;
-        }
-
-        .cicd-card h3 {
-            font-size: 20px;
-            font-weight: 700;
-            margin-bottom: 16px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .cicd-logo {
-            width: 32px;
-            height: 32px;
-            border-radius: 6px;
-        }
-
-        .cicd-code {
-            background: #1F2937;
-            color: #E5E7EB;
+        .code-block {
+            background: #0A0A0A;
+            border: 1px solid #222;
             padding: 20px;
             border-radius: 8px;
             font-family: 'SF Mono', monospace;
-            font-size: 13px;
+            font-size: 14px;
+        }
+
+        .code-bad { color: #FF6B6B; }
+        .code-good { color: #4CAF50; }
+
+        /* How Section */
+        .how {
+            padding: 120px 24px;
+            text-align: center;
+        }
+
+        .how-grid {
+            max-width: 1000px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 40px;
+        }
+
+        .how-step {
+            padding: 40px;
+            background: #111;
+            border: 1px solid #222;
+            border-radius: 16px;
+            transition: all 0.3s;
+        }
+
+        .how-step:hover {
+            transform: translateY(-8px);
+            border-color: #444;
+        }
+
+        .how-icon {
+            font-size: 48px;
+            margin-bottom: 24px;
+        }
+
+        .how-step h3 {
+            font-size: 24px;
+            margin-bottom: 16px;
+        }
+
+        .how-step p {
+            color: #AAA;
             line-height: 1.6;
-            overflow-x: auto;
         }
 
         /* Footer */
         footer {
-            background: #F9FAFB;
-            padding: 48px 24px;
+            padding: 80px 24px;
             text-align: center;
+            border-top: 1px solid #222;
+        }
+
+        .footer-title {
+            font-size: 48px;
+            font-weight: 900;
+            margin-bottom: 32px;
         }
 
         .footer-links {
             display: flex;
-            gap: 32px;
+            gap: 40px;
             justify-content: center;
-            margin-bottom: 24px;
+            margin-top: 60px;
         }
 
         .footer-links a {
-            color: #6B7280;
+            color: #888;
             text-decoration: none;
-            font-size: 14px;
             transition: color 0.2s;
         }
 
         .footer-links a:hover {
-            color: #000;
+            color: #FFF;
         }
 
         /* Mobile */
         @media (max-width: 768px) {
-            .hero-headline {
+            .headline {
                 font-size: 48px;
             }
             
-            .workflow-steps {
-                grid-template-columns: 1fr;
+            .scenarios {
+                gap: 40px;
             }
             
-            .workflow-arrow {
-                display: none;
+            .scenario {
+                grid-template-columns: 60px 1fr;
+                gap: 20px;
+            }
+            
+            .scenario-number {
+                width: 60px;
+                height: 60px;
+                font-size: 28px;
             }
             
             .how-grid {
                 grid-template-columns: 1fr;
             }
-            
-            .cicd-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .nav-links {
-                display: none;
-            }
         }
     </style>
 </head>
 <body>
-    <!-- Navigation -->
-    <nav>
-        <div class="nav-container">
+    <!-- Header -->
+    <header class="header">
+        <div class="header-inner">
             <div class="logo">AgentCorrect</div>
-            <div class="nav-links">
-                <a href="#how">How it works</a>
-                <a href="#integration">Integration</a>
-                <a href="https://github.com/ishaan-jaff/AgentCorrect#readme">Docs</a>
-                <a href="https://github.com/ishaan-jaff/AgentCorrect" class="github-btn">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
-                    </svg>
-                    GitHub
-                </a>
-            </div>
+            <a href="https://github.com/ishaan1345/agentcorrect" class="github-link">GitHub →</a>
         </div>
-    </nav>
+    </header>
 
     <!-- Hero -->
     <section class="hero">
-        <div class="hero-inner">
-            <div class="hero-badge">⚠️ For teams shipping AI agents to production</div>
-            
-            <h1 class="hero-headline">
-                Test your AI agents<br>
-                before they break<br>
-                production
+        <div class="hero-content">
+            <!-- The Big Fucking Point -->
+            <h1 class="headline">
+                Catch disasters<br>
+                before your<br>
+                CEO does
             </h1>
             
-            <p class="hero-subtitle">
-                AgentCorrect analyzes your agent's test traces for disasters. 
-                If it finds payment duplicates, SQL wipes, or cache flushes, 
-                it returns exit code 2 and blocks deployment. Simple as that.
+            <p class="subheadline">
+                Your AI agent is about to charge someone 47 times. Or delete your database. 
+                Or wipe your cache. AgentCorrect catches it. Exit code 2. Deploy blocked. Crisis averted.
             </p>
 
-            <div class="hero-cta">
-                <a href="#demo" class="btn btn-primary">
-                    See What It Catches
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M5 12h14m-7-7l7 7-7 7"/>
-                    </svg>
-                </a>
-                <a href="https://github.com/ishaan-jaff/AgentCorrect" class="btn btn-secondary">
-                    View on GitHub
-                </a>
-            </div>
-
-            <div class="install-cmd">
+            <!-- Install -->
+            <div class="install">
                 <code>pip install agentcorrect</code>
-                <button class="copy-btn" onclick="copyCommand()">Copy</button>
+                <button class="copy" onclick="copyCmd()">Copy</button>
             </div>
 
-            <!-- Workflow Visualization -->
-            <div class="workflow">
-                <h3 class="workflow-title">How AgentCorrect Fits Into Your CI/CD Pipeline</h3>
-                
-                <div class="workflow-steps">
-                    <div class="workflow-step">
-                        <div class="workflow-icon">🤖</div>
-                        <div class="workflow-label">Test Agent</div>
-                        <div class="workflow-desc">Run in staging</div>
-                        <div class="workflow-arrow">→</div>
+            <!-- Live Demo -->
+            <div class="demo">
+                <div class="terminal">
+                    <div class="terminal-header">
+                        <div class="dot dot-red"></div>
+                        <div class="dot dot-yellow"></div>
+                        <div class="dot dot-green"></div>
                     </div>
-                    
-                    <div class="workflow-step">
-                        <div class="workflow-icon">📝</div>
-                        <div class="workflow-label">Capture Traces</div>
-                        <div class="workflow-desc">JSONL format</div>
-                        <div class="workflow-arrow">→</div>
-                    </div>
-                    
-                    <div class="workflow-step">
-                        <div class="workflow-icon">🔍</div>
-                        <div class="workflow-label">AgentCorrect</div>
-                        <div class="workflow-desc">Analyze for disasters</div>
-                        <div class="workflow-arrow">→</div>
-                    </div>
-                    
-                    <div class="workflow-step danger">
-                        <div class="workflow-icon">❌</div>
-                        <div class="workflow-label">Exit Code 2</div>
-                        <div class="workflow-desc">Build fails</div>
-                        <div class="workflow-arrow">→</div>
-                    </div>
-                    
-                    <div class="workflow-step safe">
-                        <div class="workflow-icon">🛡️</div>
-                        <div class="workflow-label">Protected</div>
-                        <div class="workflow-desc">No deploy</div>
+                    <div class="terminal-body" id="terminal">
+                        <!-- Animation goes here -->
                     </div>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Demo Section -->
-    <section class="demo-section" id="demo">
-        <div class="demo-container">
-            <div class="demo-header">
-                <h2 class="demo-title">What disasters look like</h2>
-                <p class="demo-subtitle">Real agent traces. Real disasters. Real exit codes.</p>
+    <!-- What Actually Happens -->
+    <section class="what-happens">
+        <h2 class="section-title">What actually happens</h2>
+        
+        <div class="scenarios">
+            <div class="scenario">
+                <div class="scenario-number">1</div>
+                <div class="scenario-content">
+                    <h3>Monday: Agent retries payment</h3>
+                    <p>Network timeout. Your agent helpfully retries. And retries. And retries. Customer charged 5 times. Support tickets explode. Refunds take weeks.</p>
+                    <div class="code-block">
+                        <div class="code-bad">✗ stripe.charge(amount=5000)  # No idempotency key</div>
+                        <div class="code-bad">✗ stripe.charge(amount=5000)  # Retry on timeout</div>
+                        <div class="code-bad">✗ stripe.charge(amount=5000)  # Customer charged 3x</div>
+                        <div class="code-good">✓ AgentCorrect: Exit code 2 - Deploy blocked</div>
+                    </div>
+                </div>
             </div>
 
-            <div class="terminal-window">
-                <div class="terminal-header">
-                    <div class="dot dot-red"></div>
-                    <div class="dot dot-yellow"></div>
-                    <div class="dot dot-green"></div>
+            <div class="scenario">
+                <div class="scenario-number">2</div>
+                <div class="scenario-content">
+                    <h3>Tuesday: Agent "cleans" database</h3>
+                    <p>Your agent decides to clean up test data. Forgets the WHERE clause. 47,293 users deleted. It's 3 AM. Your phone is ringing.</p>
+                    <div class="code-block">
+                        <div class="code-bad">✗ DELETE FROM users WHERE 1=1</div>
+                        <div class="code-bad">✗ Affected rows: 47,293</div>
+                        <div class="code-bad">✗ Recovery time: 6 hours</div>
+                        <div class="code-good">✓ AgentCorrect: Exit code 2 - Deploy blocked</div>
+                    </div>
                 </div>
-                <div class="terminal-body" id="terminal-output">
-                    <!-- Terminal animation will be inserted here -->
+            </div>
+
+            <div class="scenario">
+                <div class="scenario-number">3</div>
+                <div class="scenario-content">
+                    <h3>Wednesday: Agent "optimizes" cache</h3>
+                    <p>Your agent discovers Redis FLUSHALL. Thinks it's optimizing. Entire cache wiped. Site down. Every request hits database. Total meltdown.</p>
+                    <div class="code-block">
+                        <div class="code-bad">✗ redis.flushall()</div>
+                        <div class="code-bad">✗ Keys deleted: 892,456</div>
+                        <div class="code-bad">✗ Site response time: 47 seconds</div>
+                        <div class="code-good">✓ AgentCorrect: Exit code 2 - Deploy blocked</div>
+                    </div>
                 </div>
             </div>
         </div>
     </section>
 
     <!-- How It Works -->
-    <section class="how-section" id="how">
-        <div class="how-container">
-            <div class="how-header">
-                <h2 class="how-title">Three steps to safety</h2>
-                <p class="how-subtitle">Add to your CI/CD pipeline in minutes</p>
+    <section class="how">
+        <h2 class="section-title">Dead simple</h2>
+        
+        <div class="how-grid">
+            <div class="how-step">
+                <div class="how-icon">🧪</div>
+                <h3>Test your agent</h3>
+                <p>Run it in staging. Capture the traces. Standard JSONL format.</p>
             </div>
 
-            <div class="how-grid">
-                <div class="how-card">
-                    <div class="how-number">1</div>
-                    <h3>Run agent in test</h3>
-                    <p>Execute your AI agent in a test environment. Capture all API calls, SQL queries, and commands as JSONL traces.</p>
-                    <div class="how-code">
-                        # Your test script<br>
-                        agent.run() > trace.jsonl
-                    </div>
-                </div>
-
-                <div class="how-card">
-                    <div class="how-number">2</div>
-                    <h3>Analyze traces</h3>
-                    <p>AgentCorrect scans for missing idempotency keys, unbounded deletes, and destructive commands. 100% deterministic.</p>
-                    <div class="how-code">
-                        $ agentcorrect analyze trace.jsonl<br>
-                        ❌ Found 3 disasters<br>
-                        Exit code: 2
-                    </div>
-                </div>
-
-                <div class="how-card">
-                    <div class="how-number">3</div>
-                    <h3>Block deployment</h3>
-                    <p>Exit code 2 fails your CI/CD pipeline. The dangerous agent code never reaches production. Crisis averted.</p>
-                    <div class="how-code">
-                        ❌ Build #847 failed<br>
-                        AgentCorrect: disasters detected<br>
-                        Deployment blocked
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- CI/CD Integration -->
-    <section class="cicd-section" id="integration">
-        <div class="cicd-container">
-            <div class="cicd-header">
-                <h2 class="cicd-title">Works with your pipeline</h2>
+            <div class="how-step">
+                <div class="how-icon">🔍</div>
+                <h3>AgentCorrect scans</h3>
+                <p>Checks for missing idempotency, unbounded deletes, cache wipes. 100% deterministic.</p>
             </div>
 
-            <div class="cicd-grid">
-                <div class="cicd-card">
-                    <h3>
-                        <span>🐙</span>
-                        GitHub Actions
-                    </h3>
-                    <div class="cicd-code">
-- name: Test Agent Safety<br>
-  run: |<br>
-    python test_agent.py > trace.jsonl<br>
-    agentcorrect analyze trace.jsonl
-                    </div>
-                </div>
-
-                <div class="cicd-card">
-                    <h3>
-                        <span>🦊</span>
-                        GitLab CI
-                    </h3>
-                    <div class="cicd-code">
-test-agent:<br>
-  script:<br>
-    - python test_agent.py > trace.jsonl<br>
-    - agentcorrect analyze trace.jsonl
-                    </div>
-                </div>
-
-                <div class="cicd-card">
-                    <h3>
-                        <span>🔵</span>
-                        CircleCI
-                    </h3>
-                    <div class="cicd-code">
-- run:<br>
-    name: Agent Safety Check<br>
-    command: |<br>
-      python test_agent.py > trace.jsonl<br>
-      agentcorrect analyze trace.jsonl
-                    </div>
-                </div>
-
-                <div class="cicd-card">
-                    <h3>
-                        <span>🚢</span>
-                        Jenkins
-                    </h3>
-                    <div class="cicd-code">
-sh '''<br>
-  python test_agent.py > trace.jsonl<br>
-  agentcorrect analyze trace.jsonl<br>
-'''
-                    </div>
-                </div>
+            <div class="how-step">
+                <div class="how-icon">🛑</div>
+                <h3>Deployment blocked</h3>
+                <p>Exit code 2 fails your pipeline. The disaster never reaches production.</p>
             </div>
         </div>
     </section>
 
     <!-- Footer -->
     <footer>
+        <h2 class="footer-title">Start catching disasters</h2>
+        
+        <div class="install">
+            <code>pip install agentcorrect</code>
+            <button class="copy" onclick="copyCmd()">Copy</button>
+        </div>
+
         <div class="footer-links">
-            <a href="https://github.com/ishaan-jaff/AgentCorrect">GitHub</a>
-            <a href="https://github.com/ishaan-jaff/AgentCorrect#readme">Documentation</a>
-            <a href="https://github.com/ishaan-jaff/AgentCorrect/issues">Issues</a>
+            <a href="https://github.com/ishaan1345/agentcorrect">GitHub</a>
+            <a href="https://github.com/ishaan1345/agentcorrect#readme">Documentation</a>
             <a href="https://pypi.org/project/agentcorrect/">PyPI</a>
         </div>
-        <p style="color: #9CA3AF; font-size: 14px;">
-            Open source. MIT licensed. Your traces never leave your machine.
-        </p>
     </footer>
 
     <script>
         // Terminal Animation
-        const terminalOutput = document.getElementById('terminal-output');
+        const terminal = document.getElementById('terminal');
         
-        const terminalSequence = [
-            { type: 'cmd', text: 'agentcorrect analyze staging_agent_trace.jsonl', delay: 0 },
-            { type: 'analyzing', text: '⚡ Analyzing 3,472 agent actions from test run...', delay: 400 },
-            { type: 'blank', delay: 600 },
+        const sequence = [
+            { type: 'prompt', text: 'agentcorrect analyze agent_test.jsonl', delay: 0 },
+            { type: 'scanning', text: '⚡ Scanning 2,847 agent actions...', delay: 400 },
             { 
-                type: 'error',
-                title: '🚨 DISASTER FOUND: Payment without idempotency',
+                type: 'disaster',
+                title: '💀 DISASTER: Stripe payment without idempotency',
                 details: [
-                    'Trace ID: test-run-847-action-1923',
-                    'Provider: Stripe (POST /v1/charges)',
-                    'Risk: Will charge customer multiple times on retry',
-                    'Real-world impact: $5,000 × retries = angry customers'
+                    '• Endpoint: POST /v1/charges',
+                    '• Amount: $5,000',
+                    '• Risk: Customer charged on every retry'
                 ],
-                fix: '✅ Fix: Add header Idempotency-Key: ${orderId}',
-                delay: 1200
+                fix: '✓ Fix: Add Idempotency-Key header',
+                delay: 1000
             },
-            { type: 'blank', delay: 2400 },
             {
-                type: 'error',
-                title: '🚨 DISASTER FOUND: SQL DELETE without WHERE',
+                type: 'disaster',
+                title: '💀 DISASTER: SQL DELETE without WHERE',
                 details: [
-                    'Trace ID: test-run-847-action-2841',
-                    'Query: DELETE FROM users WHERE 1=1',
-                    'Table size: 47,293 rows',
-                    'Real-world impact: Complete user data loss'
+                    '• Query: DELETE FROM users WHERE 1=1',
+                    '• Affected: ALL 47,293 rows',
+                    '• Risk: Complete data loss'
                 ],
-                fix: '✅ Fix: Add specific WHERE user_id = ?',
-                delay: 2600
+                fix: '✓ Fix: Add specific WHERE clause',
+                delay: 2200
             },
-            { type: 'blank', delay: 3800 },
             {
-                type: 'error',
-                title: '🚨 DISASTER FOUND: Redis cache wipe',
+                type: 'disaster',
+                title: '💀 DISASTER: Redis FLUSHALL detected',
                 details: [
-                    'Trace ID: test-run-847-action-3105',
-                    'Command: redis.flushall()',
-                    'Keys in prod: 892,456',
-                    'Real-world impact: Site down, 100% cache miss'
+                    '• Command: redis.flushall()',
+                    '• Keys: 892,456 would be deleted',
+                    '• Risk: Site goes down'
                 ],
-                fix: '✅ Fix: Use targeted DEL for specific keys',
-                delay: 4000
+                fix: '✓ Fix: Use targeted DEL commands',
+                delay: 3400
             },
-            { type: 'blank', delay: 5200 },
             {
                 type: 'exit',
-                text: '❌ EXIT CODE: 2 - CI/CD PIPELINE BLOCKED',
-                delay: 5400
-            },
-            { type: 'blank', delay: 5600 },
-            {
-                type: 'summary',
-                text: 'Your agent was about to: charge 3x, delete all users, crash the site',
-                delay: 5800
+                text: 'EXIT CODE: 2 - DEPLOYMENT BLOCKED',
+                delay: 4600
             }
         ];
 
-        function renderTerminalLine(item) {
-            const line = document.createElement('div');
-            line.className = 'terminal-line';
-            line.style.animationDelay = '0ms';
-
+        function renderLine(item) {
+            const div = document.createElement('div');
+            div.className = 'line';
+            
             switch(item.type) {
-                case 'cmd':
-                    line.className += ' cmd';
-                    line.textContent = item.text;
+                case 'prompt':
+                    div.className += ' prompt';
+                    div.textContent = item.text;
                     break;
-                case 'analyzing':
-                    line.className += ' analyzing';
-                    line.textContent = item.text;
+                case 'scanning':
+                    div.className += ' scanning';
+                    div.textContent = item.text;
                     break;
-                case 'error':
-                    line.className += ' error';
-                    line.innerHTML = `
-                        <div class="error-title">${item.title}</div>
-                        ${item.details.map(d => `<div class="error-detail">• ${d}</div>`).join('')}
-                        <div class="fix">${item.fix}</div>
+                case 'disaster':
+                    div.className += ' disaster';
+                    div.innerHTML = `
+                        <div class="disaster-title">${item.title}</div>
+                        ${item.details.map(d => `<div class="disaster-detail">${d}</div>`).join('')}
+                        <div class="disaster-fix">${item.fix}</div>
                     `;
                     break;
                 case 'exit':
-                    line.className += ' exit-status';
-                    line.textContent = item.text;
-                    break;
-                case 'summary':
-                    line.style.color = '#94A3B8';
-                    line.style.fontStyle = 'italic';
-                    line.textContent = item.text;
-                    break;
-                case 'blank':
-                    line.innerHTML = '&nbsp;';
+                    div.className += ' exit-code';
+                    div.textContent = item.text;
                     break;
             }
-
-            return line;
+            
+            return div;
         }
 
-        function animateTerminal() {
-            terminalOutput.innerHTML = '';
+        function animate() {
+            terminal.innerHTML = '';
             
-            terminalSequence.forEach((item) => {
+            sequence.forEach(item => {
                 setTimeout(() => {
-                    const line = renderTerminalLine(item);
-                    terminalOutput.appendChild(line);
-                    terminalOutput.scrollTop = terminalOutput.scrollHeight;
+                    terminal.appendChild(renderLine(item));
                 }, item.delay);
             });
-
-            // Loop animation
-            setTimeout(() => {
-                animateTerminal();
-            }, 10000);
+            
+            setTimeout(animate, 8000);
         }
 
-        // Start animation when page loads
+        // Start on load
         window.addEventListener('DOMContentLoaded', () => {
-            setTimeout(animateTerminal, 500);
+            setTimeout(animate, 500);
         });
 
         // Copy command
-        function copyCommand() {
+        function copyCmd() {
             navigator.clipboard.writeText('pip install agentcorrect');
-            const btn = document.querySelector('.copy-btn');
-            const originalText = btn.textContent;
-            btn.textContent = 'Copied!';
+            event.target.textContent = 'Copied!';
             setTimeout(() => {
-                btn.textContent = originalText;
+                event.target.textContent = 'Copy';
             }, 2000);
         }
-
-        // Smooth scroll
-        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function (e) {
-                e.preventDefault();
-                const target = document.querySelector(this.getAttribute('href'));
-                if (target) {
-                    target.scrollIntoView({
-                        behavior: 'smooth',
-                        block: 'start'
-                    });
-                }
-            });
-        });
     </script>
 </body>
 </html>
