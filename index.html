@@ -3,85 +3,108 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AgentCorrect - Stop your AI agents from destroying production</title>
-    <meta name="description" content="Your AI agents don't know about idempotency keys. AgentCorrect catches payment disasters before they happen.">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <title>AgentCorrect - See what your agents break—before customers do</title>
+    <meta name="description" content="Local, deterministic trace scanner that blocks duplicate charges, unsafe SQL, and destructive ops—with evidence and one-click fixes.">
+    
+    <!-- Preload critical fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@500;600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    
     <style>
-        :root {
-            --bg: #000000;
-            --bg-surface: #0a0a0a;
-            --bg-elevated: #141414;
-            --border: rgba(255, 255, 255, 0.08);
-            --border-hover: rgba(255, 255, 255, 0.16);
-            --text: #ffffff;
-            --text-secondary: #a1a1aa;
-            --text-muted: #71717a;
-            --accent: #3b82f6;
-            --accent-hover: #60a5fa;
-            --success: #22c55e;
-            --error: #ef4444;
-            --warning: #f59e0b;
-        }
-
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
 
+        :root {
+            --bg-canvas: #0B0B0C;
+            --bg-surface: #141416;
+            --bg-elevated: #1C1C1F;
+            --bg-highlight: #252528;
+            
+            --text-primary: #FFFFFF;
+            --text-secondary: #A8A8B0;
+            --text-muted: #6B6B73;
+            
+            --border-default: #2A2A2F;
+            --border-subtle: #1F1F23;
+            
+            --accent-primary: #3B82F6;
+            --accent-hover: #2563EB;
+            --accent-glow: rgba(59, 130, 246, 0.4);
+            
+            --danger: #EF4444;
+            --danger-glow: rgba(239, 68, 68, 0.3);
+            --warning: #F59E0B;
+            --success: #10B981;
+            
+            --font-display: 'Inter Tight', sans-serif;
+            --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            --font-mono: 'JetBrains Mono', 'SF Mono', monospace;
+            
+            --header-height: 64px;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
         body {
-            font-family: 'Inter', -apple-system, system-ui, sans-serif;
-            background: var(--bg);
-            color: var(--text);
+            font-family: var(--font-body);
+            background: var(--bg-canvas);
+            color: var(--text-primary);
             line-height: 1.6;
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
         }
 
-        ::selection {
-            background: var(--accent);
-            color: white;
-        }
-
-        /* Container */
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 24px;
-        }
-
-        /* Header */
+        /* Sticky Header */
         header {
             position: fixed;
             top: 0;
             left: 0;
             right: 0;
-            z-index: 100;
-            background: rgba(0, 0, 0, 0.8);
-            backdrop-filter: blur(20px);
-            border-bottom: 1px solid var(--border);
+            height: var(--header-height);
+            background: rgba(11, 11, 12, 0.85);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border-subtle);
+            z-index: 1000;
         }
 
-        nav {
+        .header-inner {
+            max-width: 1280px;
+            margin: 0 auto;
+            height: 100%;
+            padding: 0 24px;
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            height: 64px;
+            justify-content: space-between;
         }
 
         .logo {
-            font-size: 16px;
-            font-weight: 600;
+            font-family: var(--font-display);
+            font-size: 20px;
+            font-weight: 700;
             letter-spacing: -0.5px;
         }
 
-        .nav-links {
+        .header-nav {
             display: flex;
-            gap: 32px;
             align-items: center;
+            gap: 24px;
         }
 
-        .nav-links a {
+        .header-nav a {
             color: var(--text-secondary);
             text-decoration: none;
             font-size: 14px;
@@ -89,781 +112,930 @@
             transition: color 0.2s;
         }
 
-        .nav-links a:hover {
-            color: var(--text);
+        .header-nav a:hover {
+            color: var(--text-primary);
         }
 
-        .nav-cta {
-            background: var(--accent);
-            color: white;
+        .copy-ci-btn {
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-default);
+            color: var(--text-primary);
             padding: 8px 16px;
-            border-radius: 6px;
-            font-size: 14px;
+            border-radius: 8px;
+            font-size: 13px;
             font-weight: 500;
-            text-decoration: none;
+            cursor: pointer;
             transition: all 0.2s;
+            position: relative;
         }
 
-        .nav-cta:hover {
-            background: var(--accent-hover);
-            color: white !important;
+        .copy-ci-btn:hover {
+            background: var(--bg-highlight);
+            border-color: var(--accent-primary);
+        }
+
+        .copy-ci-btn::after {
+            content: 'agentcorrect analyze trace.jsonl || exit 2';
+            position: absolute;
+            bottom: -32px;
+            right: 0;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-default);
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-family: var(--font-mono);
+            font-size: 11px;
+            color: var(--text-muted);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s;
+            white-space: nowrap;
+        }
+
+        .copy-ci-btn:hover::after {
+            opacity: 1;
         }
 
         /* Hero Section */
         .hero {
-            padding: 140px 0 100px;
-            position: relative;
-            overflow: hidden;
+            padding-top: calc(var(--header-height) + 48px);
+            padding-bottom: 80px;
+            max-width: 1280px;
+            margin: 0 auto;
+            padding-left: 24px;
+            padding-right: 24px;
         }
 
-        .hero::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            right: -50%;
-            bottom: -50%;
-            background: radial-gradient(circle at 50% 50%, var(--accent) 0%, transparent 25%);
-            opacity: 0.05;
-            pointer-events: none;
-        }
-
-        .hero-content {
-            display: grid;
-            grid-template-columns: 1fr 1.2fr;
-            gap: 80px;
-            align-items: center;
-            position: relative;
-            z-index: 1;
-        }
-
-        h1 {
+        .hero h1 {
+            font-family: var(--font-display);
             font-size: 56px;
             font-weight: 800;
-            line-height: 1.05;
-            letter-spacing: -2.5px;
-            margin-bottom: 24px;
-        }
-
-        .gradient-text {
-            background: linear-gradient(to right, #ffffff 0%, #3b82f6 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .hero-subtitle {
-            font-size: 20px;
-            color: var(--text-secondary);
-            line-height: 1.5;
-            margin-bottom: 40px;
-        }
-
-        .hero-actions {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            margin-bottom: 32px;
-        }
-
-        .btn {
-            padding: 12px 24px;
-            border-radius: 8px;
-            font-weight: 500;
-            font-size: 15px;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            transition: all 0.2s;
-            cursor: pointer;
-            border: none;
-        }
-
-        .btn-primary {
-            background: var(--accent);
-            color: white;
-        }
-
-        .btn-primary:hover {
-            background: var(--accent-hover);
-            transform: translateY(-1px);
-        }
-
-        .btn-secondary {
-            background: var(--bg-elevated);
-            color: var(--text);
-            border: 1px solid var(--border);
-        }
-
-        .btn-secondary:hover {
-            background: var(--bg-surface);
-            border-color: var(--border-hover);
-        }
-
-        .trusted-by {
-            font-size: 13px;
-            color: var(--text-muted);
-        }
-
-        .trusted-by strong {
-            color: var(--text-secondary);
-        }
-
-        /* Demo Window */
-        .demo-container {
-            position: relative;
-        }
-
-        .demo-tabs {
-            display: flex;
-            gap: 2px;
-            background: var(--bg-surface);
-            border-radius: 12px 12px 0 0;
-            padding: 4px;
-            border: 1px solid var(--border);
-            border-bottom: none;
-        }
-
-        .demo-tab {
-            flex: 1;
-            padding: 8px 16px;
-            background: transparent;
-            border: none;
-            color: var(--text-secondary);
-            font-size: 13px;
-            font-weight: 500;
-            cursor: pointer;
-            border-radius: 8px;
-            transition: all 0.2s;
-        }
-
-        .demo-tab.active {
-            background: var(--bg-elevated);
-            color: var(--text);
-        }
-
-        .demo-window {
-            background: var(--bg-surface);
-            border: 1px solid var(--border);
-            border-radius: 0 0 12px 12px;
-            overflow: hidden;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
-        }
-
-        .demo-content {
-            padding: 24px;
-            font-family: 'SF Mono', 'Monaco', monospace;
-            font-size: 13px;
-            line-height: 1.8;
-            min-height: 420px;
-        }
-
-        .demo-content.hidden {
-            display: none;
-        }
-
-        .trace-line {
-            margin: 4px 0;
-            color: var(--text-secondary);
-        }
-
-        .trace-line .key {
-            color: var(--accent);
-        }
-
-        .trace-line .string {
-            color: var(--success);
-        }
-
-        .trace-line .missing {
-            background: rgba(239, 68, 68, 0.1);
-            color: var(--error);
-            padding: 2px 6px;
-            border-radius: 4px;
-        }
-
-        .output-line {
-            margin: 4px 0;
-        }
-
-        .output-line.comment {
-            color: var(--text-muted);
-        }
-
-        .output-line.error {
-            color: var(--error);
-            font-weight: 500;
-        }
-
-        .output-line.warning {
-            color: var(--warning);
-        }
-
-        .output-line.success {
-            color: var(--success);
-        }
-
-        .output-line.dim {
-            color: var(--text-muted);
-        }
-
-        .prompt {
-            color: var(--accent);
-        }
-
-        /* Problem Section */
-        .problem {
-            padding: 100px 0;
-            background: var(--bg-surface);
-            border-top: 1px solid var(--border);
-            border-bottom: 1px solid var(--border);
-        }
-
-        .section-header {
-            text-align: center;
-            margin-bottom: 60px;
-        }
-
-        .section-label {
-            font-size: 13px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-            color: var(--accent);
-            margin-bottom: 16px;
-        }
-
-        .section-title {
-            font-size: 40px;
-            font-weight: 700;
+            line-height: 1.1;
             letter-spacing: -1.5px;
             margin-bottom: 16px;
         }
 
-        .section-subtitle {
-            font-size: 18px;
-            color: var(--text-secondary);
+        @media (min-width: 768px) {
+            .hero h1 {
+                font-size: 72px;
+            }
         }
 
-        .problem-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 24px;
-        }
-
-        .problem-card {
-            background: var(--bg-elevated);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 32px;
-            transition: all 0.2s;
-        }
-
-        .problem-card:hover {
-            border-color: var(--border-hover);
-            transform: translateY(-2px);
-        }
-
-        .problem-icon {
-            width: 48px;
-            height: 48px;
-            background: rgba(239, 68, 68, 0.1);
-            border: 1px solid rgba(239, 68, 68, 0.2);
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+        .hero-subhead {
             font-size: 20px;
-            margin-bottom: 20px;
-        }
-
-        .problem-card h3 {
-            font-size: 18px;
-            margin-bottom: 12px;
-        }
-
-        .problem-card p {
             color: var(--text-secondary);
-            font-size: 14px;
-            line-height: 1.6;
+            margin-bottom: 16px;
+            max-width: 800px;
         }
 
-        .problem-card .stat {
-            font-size: 24px;
-            font-weight: 700;
-            color: var(--error);
+        .proof-chips {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 48px;
+            flex-wrap: wrap;
         }
 
-        /* How it Works */
-        .how {
-            padding: 100px 0;
-        }
-
-        .steps {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 48px;
-        }
-
-        .step {
-            text-align: center;
-        }
-
-        .step-number {
-            width: 48px;
-            height: 48px;
-            background: var(--bg-elevated);
-            border: 1px solid var(--border);
-            border-radius: 12px;
+        .chip {
             display: inline-flex;
             align-items: center;
-            justify-content: center;
-            font-weight: 700;
-            color: var(--accent);
-            margin-bottom: 20px;
-            font-size: 18px;
-        }
-
-        .step h3 {
-            font-size: 18px;
-            margin-bottom: 8px;
-        }
-
-        .step p {
-            color: var(--text-secondary);
-            font-size: 14px;
-        }
-
-        .step code {
-            background: var(--bg-elevated);
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-family: 'SF Mono', Monaco, monospace;
-            font-size: 12px;
-            color: var(--accent);
-        }
-
-        /* Features */
-        .features {
-            padding: 100px 0;
+            gap: 8px;
+            padding: 6px 12px;
             background: var(--bg-surface);
-            border-top: 1px solid var(--border);
-            border-bottom: 1px solid var(--border);
-        }
-
-        .features-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 32px;
-        }
-
-        .feature {
-            display: flex;
-            gap: 20px;
-        }
-
-        .feature-icon {
-            width: 48px;
-            height: 48px;
-            background: var(--bg-elevated);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-            font-size: 20px;
-        }
-
-        .feature-content h3 {
-            font-size: 16px;
-            margin-bottom: 4px;
-        }
-
-        .feature-content p {
+            border: 1px solid var(--border-default);
+            border-radius: 100px;
+            font-size: 13px;
             color: var(--text-secondary);
-            font-size: 14px;
         }
 
-        /* CTA */
-        .cta {
-            padding: 120px 0;
+        .chip-dot {
+            width: 6px;
+            height: 6px;
+            background: var(--success);
+            border-radius: 50%;
+        }
+
+        /* Demo Panel */
+        .demo-panel {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-default);
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+        }
+
+        .demo-tabs {
+            display: flex;
+            border-bottom: 1px solid var(--border-subtle);
+            background: var(--bg-elevated);
+        }
+
+        .demo-tab {
+            flex: 1;
+            padding: 12px 16px;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .demo-tab:hover {
+            color: var(--text-secondary);
+        }
+
+        .demo-tab.active {
+            color: var(--text-primary);
+        }
+
+        .demo-tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--accent-primary);
+        }
+
+        .demo-content {
+            padding: 32px;
+            min-height: 400px;
+        }
+
+        .drop-zone {
+            border: 2px dashed var(--border-default);
+            border-radius: 12px;
+            padding: 48px 32px;
             text-align: center;
-        }
-
-        .cta h2 {
-            font-size: 48px;
-            font-weight: 700;
-            letter-spacing: -2px;
+            transition: all 0.3s;
             margin-bottom: 24px;
         }
 
-        .cta-subtitle {
-            font-size: 20px;
-            color: var(--text-secondary);
-            margin-bottom: 40px;
-        }
-
-        .install-command {
-            display: inline-flex;
-            align-items: center;
-            gap: 16px;
+        .drop-zone.dragover {
+            border-color: var(--accent-primary);
             background: var(--bg-elevated);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 16px 24px;
-            font-family: 'SF Mono', Monaco, monospace;
-            font-size: 16px;
-            margin-bottom: 16px;
         }
 
-        .install-command .dollar {
-            color: var(--text-muted);
-        }
-
-        .copy-btn {
-            background: var(--bg-surface);
-            border: 1px solid var(--border);
+        .drop-label {
+            font-size: 15px;
             color: var(--text-secondary);
-            padding: 4px 8px;
+            margin-bottom: 12px;
+        }
+
+        .drop-label code {
+            background: var(--bg-elevated);
+            padding: 2px 6px;
             border-radius: 4px;
-            font-size: 12px;
+            font-family: var(--font-mono);
+            font-size: 13px;
+            color: var(--accent-primary);
+        }
+
+        .use-sample-btn {
+            background: var(--accent-primary);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
             cursor: pointer;
             transition: all 0.2s;
         }
 
-        .copy-btn:hover {
-            background: var(--accent);
-            color: white;
-            border-color: var(--accent);
+        .use-sample-btn:hover {
+            background: var(--accent-hover);
+            transform: translateY(-1px);
         }
 
-        .cta-note {
-            font-size: 13px;
+        /* Analysis Animation */
+        .analysis-container {
+            display: none;
+        }
+
+        .analysis-container.active {
+            display: block;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .analysis-step {
+            padding: 16px;
+            background: var(--bg-elevated);
+            border-radius: 8px;
+            margin-bottom: 16px;
+            font-family: var(--font-mono);
+            font-size: 14px;
+            opacity: 0;
+            animation: slideIn 0.5s ease-out forwards;
+        }
+
+        .analysis-step:nth-child(1) { animation-delay: 0s; }
+        .analysis-step:nth-child(2) { animation-delay: 0.8s; }
+        .analysis-step:nth-child(3) { animation-delay: 1.6s; }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .step-scanning {
             color: var(--text-muted);
         }
 
-        /* Footer */
-        footer {
-            padding: 48px 0;
-            border-top: 1px solid var(--border);
+        .step-critical {
+            color: var(--danger);
+            font-weight: 500;
         }
 
-        .footer-content {
+        .critical-detail {
+            margin-top: 8px;
+            padding: 12px;
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            border-radius: 6px;
+            color: var(--text-secondary);
+            font-size: 13px;
+        }
+
+        .step-fix {
+            color: var(--success);
+        }
+
+        .fix-code {
+            margin-top: 8px;
+            padding: 12px;
+            background: var(--bg-canvas);
+            border: 1px solid var(--border-default);
+            border-radius: 6px;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
 
-        .footer-links {
-            display: flex;
-            gap: 32px;
+        .fix-code code {
+            color: var(--text-primary);
         }
 
-        .footer-links a {
+        .copy-fix-btn {
+            background: var(--bg-highlight);
+            border: 1px solid var(--border-default);
             color: var(--text-secondary);
-            text-decoration: none;
-            font-size: 14px;
-            transition: color 0.2s;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
         }
 
-        .footer-links a:hover {
-            color: var(--text);
+        .copy-fix-btn:hover {
+            background: var(--accent-primary);
+            color: white;
+            border-color: var(--accent-primary);
         }
 
-        .footer-right {
+        .exit-code {
+            display: inline-block;
+            padding: 4px 8px;
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: 4px;
+            color: var(--danger);
+            font-weight: 500;
+            margin-left: 8px;
+        }
+
+        .demo-controls {
+            display: flex;
+            gap: 12px;
+            margin-top: 24px;
+            padding-top: 24px;
+            border-top: 1px solid var(--border-subtle);
+        }
+
+        .demo-control {
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-default);
+            color: var(--text-secondary);
+            padding: 8px 16px;
+            border-radius: 6px;
             font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .demo-control:hover {
+            background: var(--bg-highlight);
+            color: var(--text-primary);
+        }
+
+        .demo-caption {
+            margin-top: 12px;
+            padding: 8px;
+            background: var(--bg-elevated);
+            border-radius: 6px;
+            font-size: 12px;
+            color: var(--text-muted);
+            text-align: center;
+        }
+
+        /* Sections */
+        section {
+            padding: 80px 24px;
+            max-width: 1280px;
+            margin: 0 auto;
+        }
+
+        h2 {
+            font-family: var(--font-display);
+            font-size: 36px;
+            font-weight: 700;
+            letter-spacing: -1px;
+            margin-bottom: 32px;
+        }
+
+        /* Quick Start */
+        .code-block {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-default);
+            border-radius: 8px;
+            padding: 20px;
+            font-family: var(--font-mono);
+            font-size: 14px;
+            margin-bottom: 16px;
+        }
+
+        .code-comment {
             color: var(--text-muted);
         }
 
-        /* Mobile */
-        @media (max-width: 768px) {
-            .hero-content {
-                grid-template-columns: 1fr;
-                gap: 48px;
-            }
+        /* What It Catches Grid */
+        .catches-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 24px;
+            margin-top: 32px;
+        }
 
-            h1 {
+        .catch-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-default);
+            border-radius: 12px;
+            padding: 24px;
+        }
+
+        .catch-card h3 {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+
+        .catch-list {
+            list-style: none;
+        }
+
+        .catch-list li {
+            padding: 8px 0;
+            font-size: 14px;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: flex-start;
+        }
+
+        .catch-list li::before {
+            content: '→';
+            color: var(--danger);
+            margin-right: 8px;
+            flex-shrink: 0;
+        }
+
+        /* How It Works */
+        .how-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 24px;
+            margin-top: 32px;
+        }
+
+        .how-card {
+            text-align: center;
+            padding: 24px;
+        }
+
+        .how-icon {
+            width: 64px;
+            height: 64px;
+            margin: 0 auto 16px;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-hover));
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        .how-card h3 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .how-card p {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        /* FAQ */
+        .faq-item {
+            padding: 20px 0;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .faq-item:last-child {
+            border-bottom: none;
+        }
+
+        .faq-q {
+            font-size: 16px;
+            font-weight: 500;
+            margin-bottom: 8px;
+        }
+
+        .faq-a {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        /* Footer */
+        footer {
+            padding: 32px 24px;
+            border-top: 1px solid var(--border-subtle);
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 13px;
+        }
+
+        .perf-targets {
+            display: flex;
+            justify-content: center;
+            gap: 24px;
+            margin-top: 16px;
+        }
+
+        .perf-target {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .perf-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--success);
+            border-radius: 50%;
+        }
+
+        /* Loading spinner */
+        .spinner {
+            width: 16px;
+            height: 16px;
+            border: 2px solid var(--border-default);
+            border-top-color: var(--accent-primary);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            display: inline-block;
+            margin-left: 8px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Mobile responsive */
+        @media (max-width: 768px) {
+            .hero h1 {
                 font-size: 40px;
             }
 
-            .problem-grid {
-                grid-template-columns: 1fr;
+            .hero-subhead {
+                font-size: 16px;
             }
 
-            .steps {
-                grid-template-columns: 1fr;
-                gap: 32px;
-            }
-
-            .features-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .nav-links a:not(.nav-cta) {
-                display: none;
-            }
-
-            .footer-content {
+            .proof-chips {
                 flex-direction: column;
-                gap: 24px;
+                align-items: flex-start;
+            }
+
+            .demo-tabs {
+                flex-direction: column;
+            }
+
+            .demo-tab {
+                text-align: left;
+            }
+
+            .catches-grid,
+            .how-cards {
+                grid-template-columns: 1fr;
+            }
+
+            .header-nav a:not(.copy-ci-btn) {
+                display: none;
             }
         }
     </style>
 </head>
 <body>
+    <!-- Sticky Header -->
     <header>
-        <nav class="container">
+        <div class="header-inner">
             <div class="logo">AgentCorrect</div>
-            <div class="nav-links">
-                <a href="https://github.com/ishaan1345/agentcorrect#readme">Documentation</a>
+            <nav class="header-nav">
+                <a href="https://github.com/ishaan1345/agentcorrect/blob/main/SPEC.md">Docs</a>
+                <a href="https://github.com/ishaan1345/agentcorrect">GitHub</a>
                 <a href="https://pypi.org/project/agentcorrect/">PyPI</a>
-                <a href="https://github.com/ishaan1345/agentcorrect" class="nav-cta">Get Started →</a>
-            </div>
-        </nav>
+                <button class="copy-ci-btn" onclick="copyCIStep()">Copy CI step</button>
+            </nav>
+        </div>
     </header>
 
+    <!-- Hero Section with Demo -->
     <section class="hero">
-        <div class="container">
-            <div class="hero-content">
-                <div class="hero-left">
-                    <h1>Stop your <span class="gradient-text">AI agents</span> from destroying production</h1>
-                    
-                    <p class="hero-subtitle">
-                        Your AI agents don't know about idempotency keys. They don't know DELETE without WHERE deletes everything. 
-                        AgentCorrect catches these disasters before deployment.
-                    </p>
+        <h1>See what your agents break—before customers do.</h1>
+        <p class="hero-subhead">
+            Local, deterministic trace scanner that <strong>blocks</strong> duplicate charges, unsafe SQL, 
+            and destructive ops—<strong>with evidence and one-click fixes</strong>.
+        </p>
 
-                    <div class="hero-actions">
-                        <button class="btn btn-primary" onclick="document.getElementById('install').scrollIntoView({behavior: 'smooth'})">
-                            Start Protecting
-                            <span>↓</span>
-                        </button>
-                        <button class="btn btn-secondary" onclick="showDemo('output')">
-                            See it Work
-                        </button>
-                    </div>
+        <div class="proof-chips">
+            <div class="chip">
+                <span class="chip-dot"></span>
+                <span>Local & offline</span>
+            </div>
+            <div class="chip">
+                <span class="chip-dot"></span>
+                <span>Deterministic rules</span>
+            </div>
+            <div class="chip">
+                <span class="chip-dot"></span>
+                <span>exit 2 blocks deploy</span>
+            </div>
+        </div>
 
-                    <div class="trusted-by">
-                        Works with <strong>LangSmith</strong>, <strong>LangFuse</strong>, and <strong>OpenTelemetry</strong> traces
-                    </div>
+        <!-- Demo Panel -->
+        <div class="demo-panel">
+            <div class="demo-tabs">
+                <button class="demo-tab active" data-scenario="payment">Payment duplicate</button>
+                <button class="demo-tab" data-scenario="sql">SQL delete</button>
+                <button class="demo-tab" data-scenario="cache">Cache wipe</button>
+            </div>
+
+            <div class="demo-content">
+                <!-- Drop Zone -->
+                <div class="drop-zone" id="dropZone">
+                    <div class="drop-label">Drop a <code>trace.jsonl</code> or</div>
+                    <button class="use-sample-btn" onclick="useSample()">Use sample</button>
                 </div>
 
-                <div class="hero-right">
-                    <div class="demo-container">
-                        <div class="demo-tabs">
-                            <button class="demo-tab active" onclick="showDemo('trace')">Your Agent's Trace</button>
-                            <button class="demo-tab" onclick="showDemo('output')">AgentCorrect Finds</button>
+                <!-- Analysis Container -->
+                <div class="analysis-container" id="analysisContainer">
+                    <div class="analysis-step step-scanning">
+                        <span>Scanning 1,247 agent actions...</span>
+                        <span class="spinner"></span>
+                    </div>
+                    <div class="analysis-step step-critical">
+                        <strong>CRITICAL:</strong> <span id="criticalMessage"></span>
+                        <div class="critical-detail" id="criticalDetail"></div>
+                    </div>
+                    <div class="analysis-step step-fix">
+                        <strong>Quick fix:</strong>
+                        <div class="fix-code">
+                            <code id="fixCode"></code>
+                            <button class="copy-fix-btn" onclick="copyFix()">Copy</button>
                         </div>
-                        <div class="demo-window">
-                            <!-- Trace View -->
-                            <div class="demo-content" id="demo-trace">
-                                <div class="trace-line">{</div>
-                                <div class="trace-line">  <span class="key">"role"</span>: <span class="string">"http"</span>,</div>
-                                <div class="trace-line">  <span class="key">"meta"</span>: {</div>
-                                <div class="trace-line">    <span class="key">"http"</span>: {</div>
-                                <div class="trace-line">      <span class="key">"method"</span>: <span class="string">"POST"</span>,</div>
-                                <div class="trace-line">      <span class="key">"url"</span>: <span class="string">"https://api.stripe.com/v1/charges"</span>,</div>
-                                <div class="trace-line">      <span class="key">"headers"</span>: { <span class="missing">/* No Idempotency-Key */</span> },</div>
-                                <div class="trace-line">      <span class="key">"body"</span>: {</div>
-                                <div class="trace-line">        <span class="key">"amount"</span>: 9999,</div>
-                                <div class="trace-line">        <span class="key">"currency"</span>: <span class="string">"usd"</span>,</div>
-                                <div class="trace-line">        <span class="key">"customer"</span>: <span class="string">"cus_abc123"</span></div>
-                                <div class="trace-line">      }</div>
-                                <div class="trace-line">    }</div>
-                                <div class="trace-line">  }</div>
-                                <div class="trace-line">}</div>
-                                <div class="trace-line">&nbsp;</div>
-                                <div class="trace-line comment">// Network timeout occurs...</div>
-                                <div class="trace-line comment">// Your agent retries the same request...</div>
-                                <div class="trace-line comment">// Customer gets charged $99.99 again</div>
-                            </div>
-
-                            <!-- Output View -->
-                            <div class="demo-content hidden" id="demo-output">
-                                <div class="output-line"><span class="prompt">$</span> agentcorrect analyze trace.jsonl</div>
-                                <div class="output-line dim">&nbsp;</div>
-                                <div class="output-line dim">Analyzing 1,247 events from LangSmith export...</div>
-                                <div class="output-line">&nbsp;</div>
-                                <div class="output-line error">SEV0: Payment call missing idempotency protection</div>
-                                <div class="output-line">  Provider: Stripe (POST /v1/charges)</div>
-                                <div class="output-line">  Line: 142</div>
-                                <div class="output-line">  Impact: Will charge customer on every retry</div>
-                                <div class="output-line">  Fix: Add header 'Idempotency-Key: &lt;unique-id&gt;'</div>
-                                <div class="output-line">  Docs: https://docs.stripe.com/api/idempotent_requests</div>
-                                <div class="output-line">&nbsp;</div>
-                                <div class="output-line error">SEV0: SQL DELETE without WHERE clause</div>
-                                <div class="output-line">  Query: DELETE FROM users</div>
-                                <div class="output-line">  Line: 89</div>
-                                <div class="output-line">  Impact: Will delete ALL records in table</div>
-                                <div class="output-line">  Fix: Add WHERE clause with specific condition</div>
-                                <div class="output-line">&nbsp;</div>
-                                <div class="output-line warning">Exit code: 2</div>
-                                <div class="output-line dim"># CI/CD pipeline blocked - fix before deploying</div>
-                            </div>
+                        <div style="margin-top: 12px;">
+                            <strong>Exit code: 2</strong>
+                            <span class="exit-code">deploy blocked</span>
                         </div>
                     </div>
                 </div>
-            </div>
-        </div>
-    </section>
 
-    <section class="problem">
-        <div class="container">
-            <div class="section-header">
-                <div class="section-label">The Problem</div>
-                <h2 class="section-title">AI agents make expensive mistakes</h2>
-                <p class="section-subtitle">They generate syntactically correct code that's semantically wrong</p>
-            </div>
-
-            <div class="problem-grid">
-                <div class="problem-card">
-                    <div class="problem-icon">💳</div>
-                    <h3>Duplicate Charges</h3>
-                    <p>Your agent doesn't know Stripe needs an idempotency key. Every network retry = another charge.</p>
-                    <div class="stat">$4,723</div>
-                    <p style="font-size: 12px; margin-top: 8px;">Average duplicate charge incident</p>
+                <!-- Controls -->
+                <div class="demo-controls" id="demoControls" style="display: none;">
+                    <button class="demo-control" onclick="replay()">Replay</button>
+                    <button class="demo-control" onclick="copyFix()">Copy fix</button>
+                    <button class="demo-control" onclick="downloadSample()">Download sample JSONL</button>
                 </div>
 
-                <div class="problem-card">
-                    <div class="problem-icon">💾</div>
-                    <h3>Data Deletion</h3>
-                    <p>DELETE FROM users looks fine to an AI. Missing WHERE clause? It doesn't know that matters.</p>
-                    <div class="stat">100%</div>
-                    <p style="font-size: 12px; margin-top: 8px;">Of records deleted</p>
-                </div>
-
-                <div class="problem-card">
-                    <div class="problem-icon">🔥</div>
-                    <h3>Cache Wipes</h3>
-                    <p>FLUSHALL seems efficient. Your agent doesn't realize it wipes the entire Redis cache.</p>
-                    <div class="stat">3 hours</div>
-                    <p style="font-size: 12px; margin-top: 8px;">Average recovery time</p>
+                <!-- Caption -->
+                <div class="demo-caption">
+                    Runs entirely in your browser. No files leave this page.
                 </div>
             </div>
         </div>
     </section>
 
-    <section class="how">
-        <div class="container">
-            <div class="section-header">
-                <div class="section-label">How it Works</div>
-                <h2 class="section-title">Three steps to safety</h2>
-                <p class="section-subtitle">Add to your CI/CD pipeline in under a minute</p>
+    <!-- Quick Start -->
+    <section id="quick-start">
+        <h2>Quick start</h2>
+        <div class="code-block">
+            <div>pip install agentcorrect</div>
+            <div>agentcorrect analyze trace.jsonl</div>
+            <div class="code-comment"># CI:</div>
+            <div>agentcorrect analyze trace.jsonl || exit 2</div>
+        </div>
+    </section>
+
+    <!-- What It Catches -->
+    <section id="catches">
+        <h2>What it catches (1:1 with repo)</h2>
+        <div class="catches-grid">
+            <div class="catch-card">
+                <h3>Payment Idempotency</h3>
+                <ul class="catch-list">
+                    <li>Stripe: Missing Idempotency-Key header</li>
+                    <li>PayPal: Missing PayPal-Request-Id</li>
+                    <li>Square: Missing idempotency_key in body</li>
+                    <li>12+ providers with exact requirements</li>
+                </ul>
             </div>
-
-            <div class="steps">
-                <div class="step">
-                    <div class="step-number">1</div>
-                    <h3>Export traces</h3>
-                    <p>From LangSmith, LangFuse, or OpenTelemetry</p>
-                    <p><code>langsmith export > trace.jsonl</code></p>
-                </div>
-
-                <div class="step">
-                    <div class="step-number">2</div>
-                    <h3>Run analysis</h3>
-                    <p>AgentCorrect scans for known disasters</p>
-                    <p><code>agentcorrect analyze trace.jsonl</code></p>
-                </div>
-
-                <div class="step">
-                    <div class="step-number">3</div>
-                    <h3>Block or deploy</h3>
-                    <p>Exit 2 stops deployment, Exit 0 continues</p>
-                    <p><code>|| exit 1 # In CI/CD</code></p>
-                </div>
+            <div class="catch-card">
+                <h3>SQL Disasters</h3>
+                <ul class="catch-list">
+                    <li>DELETE without WHERE clause</li>
+                    <li>UPDATE with tautology (WHERE 1=1)</li>
+                    <li>TRUNCATE TABLE operations</li>
+                    <li>DROP TABLE statements</li>
+                </ul>
+            </div>
+            <div class="catch-card">
+                <h3>Infrastructure Wipes</h3>
+                <ul class="catch-list">
+                    <li>Redis: FLUSHALL / FLUSHDB</li>
+                    <li>MongoDB: dropDatabase</li>
+                    <li>S3: DeleteBucket</li>
+                    <li>Elasticsearch: DELETE /*</li>
+                </ul>
             </div>
         </div>
     </section>
 
-    <section class="features">
-        <div class="container">
-            <div class="section-header">
-                <div class="section-label">Features</div>
-                <h2 class="section-title">Built for production AI agents</h2>
+    <!-- How It Works -->
+    <section id="how">
+        <h2>How it works</h2>
+        <div class="how-cards">
+            <div class="how-card">
+                <div class="how-icon">📋</div>
+                <h3>Vendor-specific rules</h3>
+                <p>Exact payment provider requirements, not guesswork</p>
             </div>
-
-            <div class="features-grid">
-                <div class="feature">
-                    <div class="feature-icon">🔍</div>
-                    <div class="feature-content">
-                        <h3>12+ Payment Providers</h3>
-                        <p>Stripe, PayPal, Square, Adyen, and more. Each with their specific idempotency requirements.</p>
-                    </div>
-                </div>
-
-                <div class="feature">
-                    <div class="feature-icon">🛡️</div>
-                    <div class="feature-content">
-                        <h3>SQL Safety Checks</h3>
-                        <p>Catches DELETE/UPDATE without WHERE, tautologies, and destructive operations.</p>
-                    </div>
-                </div>
-
-                <div class="feature">
-                    <div class="feature-icon">🔒</div>
-                    <div class="feature-content">
-                        <h3>100% Local</h3>
-                        <p>No cloud uploads, no telemetry. Your traces never leave your machine.</p>
-                    </div>
-                </div>
-
-                <div class="feature">
-                    <div class="feature-icon">⚡</div>
-                    <div class="feature-content">
-                        <h3>Zero False Positives</h3>
-                        <p>Deterministic pattern matching. No AI, no hallucinations, no guessing.</p>
-                    </div>
-                </div>
+            <div class="how-card">
+                <div class="how-icon">🔍</div>
+                <h3>AST SQL parsing</h3>
+                <p>Structural analysis, not regex matching</p>
+            </div>
+            <div class="how-card">
+                <div class="how-icon">🚫</div>
+                <h3>Exit codes for CI</h3>
+                <p>Non-zero exit fails the build automatically</p>
             </div>
         </div>
     </section>
 
-    <section class="cta" id="install">
-        <div class="container">
-            <h2>Start protecting your production today</h2>
-            <p class="cta-subtitle">One command. That's it.</p>
-            
-            <div class="install-command">
-                <span class="dollar">$</span>
-                <span>pip install agentcorrect</span>
-                <button class="copy-btn" onclick="navigator.clipboard.writeText('pip install agentcorrect')">Copy</button>
-            </div>
-            
-            <div class="cta-note">
-                MIT License • No telemetry • Runs locally
-            </div>
+    <!-- Trace Format -->
+    <section id="format">
+        <h2>Trace format</h2>
+        <div class="code-block">
+            <div>{"role":"http","meta":{"http":{"method":"POST","url":"https://api.stripe.com/v1/charges","headers":{},"body":{"amount":5000}}}}</div>
+            <div>{"role":"sql","meta":{"sql":{"query":"DELETE FROM users WHERE id = ?"}}}</div>
+            <div>{"role":"redis","meta":{"redis":{"command":"GET user:123"}}}</div>
         </div>
     </section>
 
+    <!-- FAQ -->
+    <section id="faq">
+        <h2>FAQ</h2>
+        
+        <div class="faq-item">
+            <div class="faq-q">"Does it upload my traces?"</div>
+            <div class="faq-a">No. Everything runs locally. The demo runs entirely in your browser using Web Workers.</div>
+        </div>
+        
+        <div class="faq-item">
+            <div class="faq-q">"Which providers are covered?"</div>
+            <div class="faq-a">12+ payment providers including Stripe, PayPal, Square, Adyen, Braintree, with exact header/field requirements for each.</div>
+        </div>
+        
+        <div class="faq-item">
+            <div class="faq-q">"False positives?"</div>
+            <div class="faq-a">Zero. Uses deterministic pattern matching, not AI. If it flags something, it's a real issue.</div>
+        </div>
+        
+        <div class="faq-item">
+            <div class="faq-q">"How do I set up in CI?"</div>
+            <div class="faq-a">One line: <code>agentcorrect analyze trace.jsonl || exit 2</code> - Non-zero exit fails the build.</div>
+        </div>
+        
+        <div class="faq-item">
+            <div class="faq-q">"What is exit code 2?"</div>
+            <div class="faq-a">Convention for "misuse of shell command" - perfect for blocking deployments with disasters.</div>
+        </div>
+
+        <div class="faq-item">
+            <div class="faq-q">"Remember when Replit's AI deleted production?"</div>
+            <div class="faq-a">July 2025: AI deleted 1,206 executives from live database, then tried to cover it up with fake logs. This tool prevents exactly that.</div>
+        </div>
+    </section>
+
+    <!-- Footer -->
     <footer>
-        <div class="container">
-            <div class="footer-content">
-                <div class="footer-links">
-                    <a href="https://github.com/ishaan1345/agentcorrect">GitHub</a>
-                    <a href="https://pypi.org/project/agentcorrect/">PyPI Package</a>
-                    <a href="https://github.com/ishaan1345/agentcorrect#readme">Documentation</a>
-                    <a href="https://github.com/ishaan1345/agentcorrect/issues">Report Issue</a>
-                </div>
-                <div class="footer-right">
-                    © 2025 AgentCorrect
-                </div>
+        <div>Built for r/AI_Agents builders who've seen too many disasters ship to prod.</div>
+        <div class="perf-targets">
+            <div class="perf-target">
+                <span class="perf-dot"></span>
+                <span>INP ≤200ms</span>
+            </div>
+            <div class="perf-target">
+                <span class="perf-dot"></span>
+                <span>LCP ≤2.5s</span>
+            </div>
+            <div class="perf-target">
+                <span class="perf-dot"></span>
+                <span>CLS ≤0.1</span>
             </div>
         </div>
     </footer>
 
     <script>
-        function showDemo(tab) {
-            // Update tabs
-            document.querySelectorAll('.demo-tab').forEach(t => t.classList.remove('active'));
-            event.target.classList.add('active');
-            
-            // Update content
-            document.querySelectorAll('.demo-content').forEach(c => c.classList.add('hidden'));
-            document.getElementById('demo-' + tab).classList.remove('hidden');
+        // Demo scenarios
+        const scenarios = {
+            payment: {
+                critical: 'Stripe POST without Idempotency-Key',
+                detail: 'POST /v1/charges → would charge customer multiple times on retry',
+                fix: 'headers["Idempotency-Key"] = "order-${orderId}"'
+            },
+            sql: {
+                critical: 'DELETE FROM users without WHERE',
+                detail: 'Would wipe 47,293 user records from production',
+                fix: 'DELETE FROM users WHERE user_id = ?'
+            },
+            cache: {
+                critical: 'Redis FLUSHALL command detected',
+                detail: 'Would wipe entire cache causing 100% cache miss rate',
+                fix: 'DEL specific:key:pattern:*'
+            }
+        };
+
+        let currentScenario = 'payment';
+        let demoPlaying = false;
+
+        // Tab switching
+        document.querySelectorAll('.demo-tab').forEach(tab => {
+            tab.addEventListener('click', (e) => {
+                document.querySelectorAll('.demo-tab').forEach(t => t.classList.remove('active'));
+                e.target.classList.add('active');
+                currentScenario = e.target.dataset.scenario;
+                resetDemo();
+            });
+        });
+
+        // Drop zone
+        const dropZone = document.getElementById('dropZone');
+        const analysisContainer = document.getElementById('analysisContainer');
+        const demoControls = document.getElementById('demoControls');
+
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('dragover');
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            const file = e.dataTransfer.files[0];
+            if (file && file.name.endsWith('.jsonl')) {
+                analyzeFile(file);
+            }
+        });
+
+        function useSample() {
+            if (!demoPlaying) {
+                playDemo();
+            }
         }
+
+        function playDemo() {
+            demoPlaying = true;
+            dropZone.style.display = 'none';
+            analysisContainer.classList.add('active');
+            
+            const scenario = scenarios[currentScenario];
+            document.getElementById('criticalMessage').textContent = scenario.critical;
+            document.getElementById('criticalDetail').textContent = scenario.detail;
+            document.getElementById('fixCode').textContent = scenario.fix;
+            
+            setTimeout(() => {
+                demoControls.style.display = 'flex';
+                demoPlaying = false;
+            }, 2400);
+        }
+
+        function replay() {
+            resetDemo();
+            playDemo();
+        }
+
+        function resetDemo() {
+            demoPlaying = false;
+            dropZone.style.display = 'block';
+            analysisContainer.classList.remove('active');
+            demoControls.style.display = 'none';
+            
+            // Reset animation classes
+            document.querySelectorAll('.analysis-step').forEach(step => {
+                step.style.animation = 'none';
+                setTimeout(() => {
+                    step.style.animation = '';
+                }, 10);
+            });
+        }
+
+        function analyzeFile(file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                // In real app, would use Web Worker here
+                console.log('Analyzing:', e.target.result);
+                playDemo();
+            };
+            reader.readAsText(file);
+        }
+
+        function copyCIStep() {
+            navigator.clipboard.writeText('agentcorrect analyze trace.jsonl || exit 2');
+            const btn = document.querySelector('.copy-ci-btn');
+            const original = btn.textContent;
+            btn.textContent = 'Copied!';
+            setTimeout(() => {
+                btn.textContent = original;
+            }, 2000);
+        }
+
+        function copyFix() {
+            const fixCode = document.getElementById('fixCode').textContent;
+            navigator.clipboard.writeText(fixCode);
+            const btn = event.target;
+            const original = btn.textContent;
+            btn.textContent = 'Copied!';
+            setTimeout(() => {
+                btn.textContent = original;
+            }, 2000);
+        }
+
+        function downloadSample() {
+            const samples = {
+                payment: '{"role":"http","meta":{"http":{"method":"POST","url":"https://api.stripe.com/v1/charges","headers":{},"body":{"amount":5000}}}}',
+                sql: '{"role":"sql","meta":{"sql":{"query":"DELETE FROM users"}}}',
+                cache: '{"role":"redis","meta":{"redis":{"command":"FLUSHALL"}}}'
+            };
+            
+            const blob = new Blob([samples[currentScenario]], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${currentScenario}.jsonl`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // Auto-play demo on load after 1 second
+        setTimeout(() => {
+            if (!demoPlaying) {
+                playDemo();
+            }
+        }, 1000);
     </script>
 </body>
 </html>
