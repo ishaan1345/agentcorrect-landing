@@ -71,17 +71,25 @@
         .nav .github {
             background: #000;
             color: #FFF;
-            padding: 8px 16px;
-            border-radius: 6px;
+            padding: 8px 20px;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        
+        .nav .github:hover {
+            background: #111;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         }
 
         /* Hero */
         .hero {
-            min-height: 100vh;
+            min-height: 85vh;
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 120px 24px 80px;
+            padding: 100px 24px 60px;
             text-align: center;
             background: linear-gradient(180deg, #FFF 0%, #F9FAFB 100%);
         }
@@ -105,13 +113,14 @@
         .headline {
             font-size: clamp(48px, 8vw, 72px);
             font-weight: 900;
-            line-height: 1.05;
+            line-height: 1.1;
             letter-spacing: -0.03em;
             margin-bottom: 24px;
             background: linear-gradient(135deg, #000 0%, #333 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
+            white-space: pre-line;
         }
 
         .subheadline {
@@ -367,10 +376,18 @@
 
         .provider {
             padding: 8px 16px;
-            background: #FFF;
+            background: linear-gradient(135deg, #FFF 0%, #F9FAFB 100%);
             border: 1px solid #E5E7EB;
-            border-radius: 6px;
+            border-radius: 20px;
             font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        
+        .provider:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            border-color: #D1D5DB;
         }
 
         /* Footer */
@@ -405,6 +422,12 @@
 
         /* Mobile */
         @media (max-width: 768px) {
+            .headline {
+                font-size: 36px;
+                white-space: normal;
+                line-height: 1.2;
+            }
+            
             .example {
                 grid-template-columns: 1fr;
             }
@@ -443,8 +466,8 @@
             <div class="speed-badge">⚡ 2-minute setup · No data leaves your machine</div>
             
             <h1 class="headline">
-                Prevent your AI agents from<br>
-                charging customers twice<br>
+                Prevent your AI agents from
+                charging customers twice
                 or deleting data
             </h1>
             
@@ -456,10 +479,7 @@
 
             <div class="cta-group">
                 <a href="#quickstart" class="btn btn-primary">
-                    Run your first scan
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M5 12h14m-7-7l7 7-7 7"/>
-                    </svg>
+                    Run your first scan →
                 </a>
                 <a href="sample-trace.jsonl" download class="btn btn-secondary">
                     Download sample trace
@@ -494,19 +514,19 @@
                     <div class="terminal">
                         <div class="terminal-prompt">$ agentcorrect analyze trace.jsonl</div>
                         <div>&nbsp;</div>
-                        <div class="terminal-error">❌ Payment: Missing idempotency</div>
-                        <div>&nbsp;&nbsp;&nbsp;Provider: Stripe</div>
-                        <div>&nbsp;&nbsp;&nbsp;Fix: Add Idempotency-Key header</div>
+                        <div class="terminal-error">✗ Payment: Missing idempotency</div>
+                        <div style="color:#9CA3AF">&nbsp;&nbsp;Provider: Stripe</div>
+                        <div style="color:#9CA3AF">&nbsp;&nbsp;Fix: Add Idempotency-Key header</div>
                         <div>&nbsp;</div>
-                        <div class="terminal-error">❌ SQL: DELETE without WHERE</div>
-                        <div>&nbsp;&nbsp;&nbsp;Affects: ALL rows</div>
-                        <div>&nbsp;&nbsp;&nbsp;Fix: Add specific conditions</div>
+                        <div class="terminal-error">✗ SQL: DELETE without WHERE</div>
+                        <div style="color:#9CA3AF">&nbsp;&nbsp;Affects: ALL rows</div>
+                        <div style="color:#9CA3AF">&nbsp;&nbsp;Fix: Add specific conditions</div>
                         <div>&nbsp;</div>
-                        <div class="terminal-error">❌ Redis: FLUSHALL detected</div>
-                        <div>&nbsp;&nbsp;&nbsp;Impact: Complete cache wipe</div>
-                        <div>&nbsp;&nbsp;&nbsp;Fix: Use targeted DEL</div>
+                        <div class="terminal-error">✗ Redis: FLUSHALL detected</div>
+                        <div style="color:#9CA3AF">&nbsp;&nbsp;Impact: Complete cache wipe</div>
+                        <div style="color:#9CA3AF">&nbsp;&nbsp;Fix: Use targeted DEL</div>
                         <div>&nbsp;</div>
-                        <div class="terminal-error">Exit: 2 (CI/CD blocked)</div>
+                        <div style="color:#F59E0B">Exit: 2 (CI/CD blocked)</div>
                     </div>
                 </div>
             </div>
@@ -599,9 +619,17 @@
     <script>
         function copyCmd() {
             navigator.clipboard.writeText('pip install agentcorrect');
-            event.target.textContent = 'Copied!';
+            const btn = event.target;
+            const originalText = btn.textContent;
+            btn.textContent = '✓ Copied';
+            btn.style.background = '#10B981';
+            btn.style.color = '#FFF';
+            btn.style.borderColor = '#10B981';
             setTimeout(() => {
-                event.target.textContent = 'Copy';
+                btn.textContent = originalText;
+                btn.style.background = '';
+                btn.style.color = '';
+                btn.style.borderColor = '';
             }, 2000);
         }
     </script>
