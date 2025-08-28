@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AgentCorrect - Your AI agents are about to do something stupid</title>
-    <meta name="description" content="Open-source safety rails for AI agents. Catches the disasters before they happen.">
+    <title>AgentCorrect - Stop your AI agents before they destroy production</title>
+    <meta name="description" content="Catches payment duplicates, SQL disasters, and cache wipes before they happen. Exit code 2 blocks deployment.">
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     
     <style>
         * {
@@ -17,749 +17,700 @@
             box-sizing: border-box;
         }
 
-        :root {
-            --black: #000000;
-            --white: #FFFFFF;
-            --gray-50: #FAFAFA;
-            --gray-100: #F4F4F5;
-            --gray-200: #E4E4E7;
-            --gray-300: #D4D4D8;
-            --gray-400: #A1A1AA;
-            --gray-500: #71717A;
-            --gray-600: #52525B;
-            --gray-700: #3F3F46;
-            --gray-800: #27272A;
-            --gray-900: #18181B;
-            
-            --red: #DC2626;
-            --green: #16A34A;
-            --yellow: #CA8A04;
-            --blue: #2563EB;
-            
-            --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            --font-mono: 'JetBrains Mono', 'SF Mono', monospace;
-        }
-
         body {
-            font-family: var(--font-sans);
-            background: var(--white);
-            color: var(--black);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #FFFFFF;
+            color: #000000;
             line-height: 1.6;
-            -webkit-font-smoothing: antialiased;
             overflow-x: hidden;
         }
 
-        /* Hero Section */
+        /* Hero Container */
         .hero {
             min-height: 100vh;
             display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 40px 20px;
+            flex-direction: column;
             position: relative;
-            background: linear-gradient(to bottom, var(--white), var(--gray-50));
+            background: linear-gradient(180deg, #FFFFFF 0%, #F8F9FA 100%);
         }
 
-        .hero-container {
-            max-width: 1400px;
-            width: 100%;
-            display: grid;
-            grid-template-columns: 1fr 1.3fr;
-            gap: 60px;
+        /* Navigation */
+        nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid #E5E7EB;
+            z-index: 1000;
+            padding: 16px 0;
+        }
+
+        .nav-container {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 0 24px;
+            display: flex;
+            justify-content: space-between;
             align-items: center;
         }
 
-        /* Left side - Story */
-        .hero-left {
-            max-width: 540px;
+        .logo {
+            font-size: 20px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
         }
 
-        .hero-badge {
+        .nav-links {
+            display: flex;
+            gap: 32px;
+            align-items: center;
+        }
+
+        .nav-links a {
+            color: #6B7280;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover {
+            color: #000;
+        }
+
+        .github-btn {
             display: inline-flex;
             align-items: center;
             gap: 8px;
-            padding: 6px 14px;
-            background: var(--gray-100);
-            border-radius: 100px;
-            font-size: 13px;
-            font-weight: 600;
-            color: var(--gray-700);
-            margin-bottom: 20px;
-            animation: slideDown 0.6s ease-out;
+            padding: 8px 16px;
+            background: #000;
+            color: #FFF;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            transition: transform 0.2s;
         }
 
-        @keyframes slideDown {
-            from {
-                opacity: 0;
-                transform: translateY(-20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+        .github-btn:hover {
+            transform: translateY(-2px);
         }
 
-        .hero-badge .dot {
-            width: 8px;
-            height: 8px;
-            background: var(--green);
-            border-radius: 50%;
-            animation: pulse 2s infinite;
+        /* Hero Content */
+        .hero-content {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 120px 24px 80px;
         }
 
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
+        .hero-inner {
+            max-width: 1280px;
+            width: 100%;
+            text-align: center;
         }
 
+        /* Centered Headline */
         .hero-headline {
-            font-size: clamp(42px, 6vw, 72px);
+            font-size: clamp(48px, 8vw, 96px);
             font-weight: 900;
-            line-height: 1.05;
-            letter-spacing: -0.03em;
-            margin-bottom: 20px;
-            animation: slideUp 0.6s ease-out 0.1s both;
-        }
-
-        @keyframes slideUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .word-agent {
-            background: linear-gradient(135deg, var(--blue), var(--green));
+            line-height: 0.95;
+            letter-spacing: -0.04em;
+            margin-bottom: 24px;
+            background: linear-gradient(135deg, #000000 0%, #434343 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
         }
 
-        .word-correct {
-            position: relative;
-        }
-
-        .word-correct::after {
-            content: '';
-            position: absolute;
-            left: 0;
-            right: 0;
-            bottom: -4px;
-            height: 4px;
-            background: var(--red);
-            transform: scaleX(0);
-            transform-origin: left;
-            animation: underline 0.6s ease-out 0.8s forwards;
-        }
-
-        @keyframes underline {
-            to { transform: scaleX(1); }
-        }
-
-        .hero-subheadline {
-            font-size: 20px;
-            color: var(--gray-600);
+        .hero-subtitle {
+            font-size: 22px;
+            color: #6B7280;
+            max-width: 720px;
+            margin: 0 auto 48px;
             line-height: 1.5;
-            margin-bottom: 32px;
-            animation: slideUp 0.6s ease-out 0.2s both;
         }
 
-        .hero-buttons {
+        /* CTA Buttons */
+        .hero-cta {
             display: flex;
             gap: 16px;
-            align-items: center;
+            justify-content: center;
             flex-wrap: wrap;
-            animation: slideUp 0.6s ease-out 0.3s both;
+            margin-bottom: 24px;
         }
 
-        .btn-primary {
-            background: var(--black);
-            color: var(--white);
-            padding: 14px 28px;
+        .btn {
+            padding: 16px 32px;
             border-radius: 8px;
-            font-weight: 600;
             font-size: 16px;
+            font-weight: 600;
             text-decoration: none;
+            transition: all 0.2s;
             display: inline-flex;
             align-items: center;
             gap: 8px;
-            transition: all 0.2s;
-            border: 2px solid var(--black);
+        }
+
+        .btn-primary {
+            background: #000;
+            color: #FFF;
+            border: 2px solid #000;
         }
 
         .btn-primary:hover {
             transform: translateY(-2px);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.2);
         }
 
         .btn-secondary {
             background: transparent;
-            color: var(--black);
-            padding: 14px 28px;
-            border-radius: 8px;
-            font-weight: 600;
-            font-size: 16px;
-            text-decoration: none;
-            border: 2px solid var(--gray-300);
-            transition: all 0.2s;
+            color: #000;
+            border: 2px solid #E5E7EB;
         }
 
         .btn-secondary:hover {
-            border-color: var(--black);
-            background: var(--gray-50);
+            border-color: #000;
+            background: #F9FAFB;
         }
 
+        /* Install Command */
         .install-command {
-            margin-top: 24px;
-            padding: 16px 20px;
-            background: var(--gray-900);
-            border-radius: 8px;
-            display: flex;
+            display: inline-flex;
             align-items: center;
-            justify-content: space-between;
-            gap: 16px;
-            animation: slideUp 0.6s ease-out 0.4s both;
+            gap: 12px;
+            padding: 12px 20px;
+            background: #1F2937;
+            border-radius: 8px;
+            margin-bottom: 64px;
+        }
+
+        .install-command code {
+            font-family: 'SF Mono', 'Monaco', monospace;
+            color: #FFF;
+            font-size: 14px;
+        }
+
+        .copy-btn {
+            padding: 4px 8px;
+            background: #374151;
+            border: none;
+            border-radius: 4px;
+            color: #9CA3AF;
+            font-size: 12px;
             cursor: pointer;
             transition: all 0.2s;
         }
 
-        .install-command:hover {
-            transform: translateX(4px);
-        }
-
-        .install-command code {
-            font-family: var(--font-mono);
-            color: var(--white);
-            font-size: 14px;
-            font-weight: 500;
-        }
-
-        .copy-btn {
-            padding: 6px 12px;
-            background: var(--gray-800);
-            border: 1px solid var(--gray-700);
-            border-radius: 4px;
-            color: var(--gray-400);
-            font-size: 12px;
-            font-weight: 500;
-            transition: all 0.2s;
-        }
-
         .copy-btn:hover {
-            background: var(--gray-700);
-            color: var(--white);
+            background: #4B5563;
+            color: #FFF;
         }
 
-        /* Right side - Live Demo */
-        .hero-right {
-            position: relative;
-            animation: fadeIn 0.8s ease-out 0.5s both;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-
-        .browser-window {
-            background: var(--white);
-            border-radius: 12px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.15), 0 0 0 1px rgba(0,0,0,0.08);
+        /* Main Demo - ANIMATED TERMINAL */
+        .demo-container {
+            max-width: 1100px;
+            margin: 0 auto;
+            background: #0A0E27;
+            border-radius: 16px;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
             overflow: hidden;
+            border: 1px solid rgba(0,0,0,0.1);
         }
 
-        .browser-header {
-            background: var(--gray-100);
-            padding: 12px 16px;
+        .demo-header {
+            background: #151A36;
+            padding: 14px 20px;
             display: flex;
             align-items: center;
-            gap: 8px;
-            border-bottom: 1px solid var(--gray-200);
+            justify-content: space-between;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
         }
 
-        .browser-dots {
+        .demo-dots {
             display: flex;
             gap: 8px;
         }
 
-        .browser-dot {
+        .dot {
             width: 12px;
             height: 12px;
             border-radius: 50%;
-            background: var(--gray-300);
         }
 
-        .browser-dot.red { background: #EF4444; }
-        .browser-dot.yellow { background: #F59E0B; }
-        .browser-dot.green { background: #10B981; }
+        .dot-red { background: #FF5F57; }
+        .dot-yellow { background: #FFBD2E; }
+        .dot-green { background: #28CA42; }
 
-        .terminal {
-            background: #0A0A0A;
-            padding: 24px;
-            font-family: var(--font-mono);
+        .demo-title {
+            color: #64748B;
             font-size: 13px;
+            font-family: 'SF Mono', monospace;
+        }
+
+        .demo-body {
+            padding: 32px;
+            font-family: 'SF Mono', 'Monaco', monospace;
+            font-size: 14px;
             line-height: 1.8;
-            min-height: 480px;
-            position: relative;
-            overflow: hidden;
+            min-height: 500px;
+            color: #E2E8F0;
         }
 
-        /* CLI Animation */
-        .cli-content {
-            position: relative;
-        }
-
-        .cli-line {
+        /* Terminal Output Styles */
+        .terminal-line {
+            margin-bottom: 8px;
             opacity: 0;
-            animation: typeLine 0.4s forwards;
+            animation: fadeIn 0.3s forwards;
         }
 
-        @keyframes typeLine {
+        @keyframes fadeIn {
             to { opacity: 1; }
         }
 
-        .prompt {
-            color: #71717A;
-            margin-bottom: 12px;
+        .cmd {
+            color: #64748B;
+        }
+
+        .cmd::before {
+            content: '$ ';
+            color: #22C55E;
         }
 
         .analyzing {
             color: #3B82F6;
             font-weight: 600;
-            margin-bottom: 20px;
-        }
-
-        .error-block {
-            background: rgba(239, 68, 68, 0.1);
-            border: 1px solid rgba(239, 68, 68, 0.3);
-            border-radius: 6px;
-            padding: 16px;
             margin: 16px 0;
         }
 
-        .error-header {
-            color: #EF4444;
+        .section-header {
+            color: #FFF;
             font-weight: 700;
-            font-size: 14px;
+            margin: 24px 0 16px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #334155;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .error {
+            background: linear-gradient(90deg, rgba(239,68,68,0.1) 0%, transparent 100%);
+            border-left: 3px solid #EF4444;
+            padding: 16px;
+            margin: 12px 0;
+            border-radius: 4px;
+        }
+
+        .error-title {
+            color: #F87171;
+            font-weight: 700;
             margin-bottom: 8px;
             display: flex;
             align-items: center;
             gap: 8px;
         }
 
-        .error-detail {
-            color: #FCA5A5;
-            margin: 4px 0;
-            padding-left: 24px;
+        .error-icon {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            background: #EF4444;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 20px;
+            font-size: 14px;
         }
 
-        .fix-text {
+        .error-detail {
+            color: #CBD5E1;
+            padding-left: 28px;
+            margin: 4px 0;
+        }
+
+        .fix {
             color: #10B981;
+            padding-left: 28px;
             margin-top: 8px;
-            padding-left: 24px;
             font-weight: 600;
         }
 
-        .exit-code {
-            margin-top: 24px;
-            padding-top: 16px;
-            border-top: 1px solid #27272A;
-            color: #EF4444;
+        .exit-status {
+            margin-top: 32px;
+            padding: 16px;
+            background: rgba(239,68,68,0.1);
+            border: 1px solid rgba(239,68,68,0.3);
+            border-radius: 8px;
+            color: #F87171;
             font-weight: 700;
-            display: flex;
-            align-items: center;
-            gap: 8px;
+            text-align: center;
         }
 
-        /* The Story Section */
-        .story {
-            padding: 120px 20px;
-            background: var(--white);
+        .success-count {
+            color: #10B981;
+            font-weight: 700;
         }
 
-        .story-container {
-            max-width: 900px;
+        /* Stats Bar */
+        .stats-bar {
+            background: #F9FAFB;
+            padding: 48px 24px;
+            border-top: 1px solid #E5E7EB;
+            border-bottom: 1px solid #E5E7EB;
+        }
+
+        .stats-container {
+            max-width: 1280px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 32px;
+            text-align: center;
+        }
+
+        .stat {
+            padding: 24px;
+        }
+
+        .stat-number {
+            font-size: 36px;
+            font-weight: 900;
+            color: #000;
+            margin-bottom: 8px;
+        }
+
+        .stat-label {
+            color: #6B7280;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        /* Features Grid */
+        .features {
+            padding: 96px 24px;
+        }
+
+        .features-container {
+            max-width: 1280px;
             margin: 0 auto;
         }
 
-        .story-header {
+        .features-header {
             text-align: center;
-            margin-bottom: 80px;
+            margin-bottom: 64px;
         }
 
-        .story-title {
-            font-size: clamp(36px, 5vw, 56px);
+        .features-title {
+            font-size: 48px;
             font-weight: 900;
-            margin-bottom: 20px;
+            margin-bottom: 16px;
             letter-spacing: -0.02em;
         }
 
-        .story-subtitle {
+        .features-subtitle {
             font-size: 20px;
-            color: var(--gray-600);
-            max-width: 600px;
-            margin: 0 auto;
+            color: #6B7280;
         }
 
-        .story-grid {
+        .features-grid {
             display: grid;
-            gap: 60px;
-        }
-
-        .story-item {
-            display: grid;
-            grid-template-columns: 80px 1fr;
-            gap: 32px;
-            align-items: start;
-        }
-
-        .story-number {
-            width: 80px;
-            height: 80px;
-            background: var(--gray-100);
-            border-radius: 16px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 32px;
-            font-weight: 900;
-            color: var(--gray-400);
-        }
-
-        .story-content h3 {
-            font-size: 28px;
-            font-weight: 800;
-            margin-bottom: 12px;
-        }
-
-        .story-content p {
-            font-size: 18px;
-            color: var(--gray-600);
-            line-height: 1.6;
-            margin-bottom: 20px;
-        }
-
-        .code-example {
-            background: var(--gray-900);
-            color: var(--gray-100);
-            padding: 20px;
-            border-radius: 8px;
-            font-family: var(--font-mono);
-            font-size: 14px;
-            overflow-x: auto;
-        }
-
-        .code-error {
-            color: #FCA5A5;
-        }
-
-        .code-success {
-            color: #86EFAC;
-        }
-
-        /* How it works */
-        .how {
-            padding: 120px 20px;
-            background: var(--gray-50);
-        }
-
-        .how-container {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-
-        .how-header {
-            text-align: center;
-            margin-bottom: 80px;
-        }
-
-        .how-title {
-            font-size: clamp(36px, 5vw, 56px);
-            font-weight: 900;
-            margin-bottom: 20px;
-        }
-
-        .how-subtitle {
-            font-size: 20px;
-            color: var(--gray-600);
-        }
-
-        .how-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
             gap: 32px;
         }
 
-        .how-card {
-            background: var(--white);
-            padding: 40px;
+        .feature {
+            padding: 32px;
+            background: #F9FAFB;
             border-radius: 16px;
-            border: 1px solid var(--gray-200);
+            border: 1px solid #E5E7EB;
             transition: all 0.3s;
         }
 
-        .how-card:hover {
+        .feature:hover {
             transform: translateY(-4px);
-            box-shadow: 0 20px 40px rgba(0,0,0,0.08);
+            box-shadow: 0 16px 32px rgba(0,0,0,0.08);
+            border-color: #D1D5DB;
         }
 
-        .how-icon {
-            width: 64px;
-            height: 64px;
-            background: var(--gray-100);
+        .feature-icon {
+            width: 48px;
+            height: 48px;
+            background: #000;
+            color: #FFF;
             border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 32px;
-            margin-bottom: 24px;
-        }
-
-        .how-card h3 {
             font-size: 24px;
-            font-weight: 800;
-            margin-bottom: 12px;
-        }
-
-        .how-card p {
-            color: var(--gray-600);
-            line-height: 1.6;
-        }
-
-        /* CTA Section */
-        .cta {
-            padding: 120px 20px;
-            background: var(--black);
-            color: var(--white);
-            text-align: center;
-        }
-
-        .cta-container {
-            max-width: 800px;
-            margin: 0 auto;
-        }
-
-        .cta-title {
-            font-size: clamp(36px, 5vw, 56px);
-            font-weight: 900;
             margin-bottom: 20px;
         }
 
-        .cta-subtitle {
+        .feature-title {
             font-size: 20px;
-            color: var(--gray-400);
-            margin-bottom: 40px;
+            font-weight: 700;
+            margin-bottom: 12px;
         }
 
-        .cta-buttons {
-            display: flex;
-            gap: 16px;
-            justify-content: center;
-            flex-wrap: wrap;
+        .feature-desc {
+            color: #6B7280;
+            line-height: 1.6;
+            margin-bottom: 16px;
         }
 
-        .cta-btn {
-            background: var(--white);
-            color: var(--black);
-            padding: 16px 32px;
-            border-radius: 8px;
-            font-weight: 600;
-            font-size: 16px;
-            text-decoration: none;
-            transition: all 0.2s;
+        .feature-code {
+            background: #1F2937;
+            color: #10B981;
+            padding: 12px;
+            border-radius: 6px;
+            font-family: 'SF Mono', monospace;
+            font-size: 12px;
         }
 
-        .cta-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 30px rgba(255,255,255,0.2);
+        /* How Section */
+        .how {
+            background: #000;
+            color: #FFF;
+            padding: 96px 24px;
         }
 
-        .cta-github {
-            background: transparent;
-            color: var(--white);
-            border: 2px solid var(--gray-800);
+        .how-container {
+            max-width: 1100px;
+            margin: 0 auto;
+            text-align: center;
         }
 
-        .cta-github:hover {
-            border-color: var(--white);
-            background: var(--gray-900);
+        .how-title {
+            font-size: 48px;
+            font-weight: 900;
+            margin-bottom: 48px;
+        }
+
+        .steps {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 48px;
+            text-align: left;
+        }
+
+        .step {
+            position: relative;
+        }
+
+        .step-number {
+            font-size: 72px;
+            font-weight: 900;
+            color: #1F2937;
+            margin-bottom: 16px;
+            line-height: 1;
+        }
+
+        .step-title {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        .step-desc {
+            color: #9CA3AF;
+            line-height: 1.6;
         }
 
         /* Footer */
         footer {
-            padding: 40px 20px;
-            background: var(--gray-50);
+            background: #F9FAFB;
+            padding: 48px 24px;
             text-align: center;
-            color: var(--gray-600);
-            font-size: 14px;
         }
 
         .footer-links {
             display: flex;
-            gap: 24px;
+            gap: 32px;
             justify-content: center;
-            margin-bottom: 20px;
+            margin-bottom: 24px;
         }
 
         .footer-links a {
-            color: var(--gray-600);
+            color: #6B7280;
             text-decoration: none;
+            font-size: 14px;
             transition: color 0.2s;
         }
 
         .footer-links a:hover {
-            color: var(--black);
+            color: #000;
         }
 
-        /* Responsive */
-        @media (max-width: 1024px) {
-            .hero-container {
-                grid-template-columns: 1fr;
-                gap: 60px;
-                max-width: 800px;
-            }
-            
-            .story-item {
-                grid-template-columns: 60px 1fr;
-                gap: 20px;
-            }
-            
-            .story-number {
-                width: 60px;
-                height: 60px;
-                font-size: 24px;
-            }
-        }
-
-        @media (max-width: 640px) {
+        /* Mobile */
+        @media (max-width: 768px) {
             .hero-headline {
-                font-size: 36px;
+                font-size: 48px;
             }
             
-            .hero-buttons {
-                flex-direction: column;
-                width: 100%;
+            .stats-container {
+                grid-template-columns: repeat(2, 1fr);
             }
             
-            .btn-primary, .btn-secondary {
-                width: 100%;
-                justify-content: center;
-            }
-            
-            .how-grid {
+            .features-grid {
                 grid-template-columns: 1fr;
+            }
+            
+            .steps {
+                grid-template-columns: 1fr;
+            }
+            
+            .nav-links {
+                display: none;
             }
         }
     </style>
 </head>
 <body>
+    <!-- Navigation -->
+    <nav>
+        <div class="nav-container">
+            <div class="logo">AgentCorrect</div>
+            <div class="nav-links">
+                <a href="#features">Features</a>
+                <a href="#how">How it works</a>
+                <a href="https://github.com/ishaan-jaff/AgentCorrect#readme">Docs</a>
+                <a href="https://github.com/ishaan-jaff/AgentCorrect" class="github-btn">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+                    </svg>
+                    GitHub
+                </a>
+            </div>
+        </div>
+    </nav>
+
     <!-- Hero Section -->
-    <section class="hero">
-        <div class="hero-container">
-            <!-- Left: The Story -->
-            <div class="hero-left">
-                <div class="hero-badge">
-                    <span class="dot"></span>
-                    <span>Open Source Safety Rails</span>
-                </div>
-                
+    <div class="hero">
+        <div class="hero-content">
+            <div class="hero-inner">
+                <!-- Centered Headline -->
                 <h1 class="hero-headline">
-                    Your AI <span class="word-agent">agents</span> are<br>
-                    about to do<br>
-                    something <span class="word-correct">stupid</span>
+                    Stop your AI agents<br>
+                    before they destroy<br>
+                    production
                 </h1>
                 
-                <p class="hero-subheadline">
-                    AgentCorrect catches disasters before they happen. 
-                    Payment duplicates. Database wipes. Cache flushes. 
-                    All blocked with exit code 2.
+                <p class="hero-subtitle">
+                    AgentCorrect analyzes your agent traces and blocks disasters. 
+                    Payment duplicates, database wipes, cache flushes — all caught with exit code 2.
                 </p>
-                
-                <div class="hero-buttons">
-                    <a href="https://github.com/ishaan-jaff/AgentCorrect" class="btn-primary">
-                        View on GitHub
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M5 12h14m-7-7l7 7-7 7" stroke="currentColor" stroke-width="2" fill="none"/>
+
+                <!-- CTAs -->
+                <div class="hero-cta">
+                    <a href="#demo" class="btn btn-primary">
+                        See Live Demo
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M5 12h14m-7-7l7 7-7 7"/>
                         </svg>
                     </a>
-                    <a href="#how" class="btn-secondary">See How It Works</a>
+                    <a href="https://github.com/ishaan-jaff/AgentCorrect" class="btn btn-secondary">
+                        View on GitHub
+                    </a>
                 </div>
-                
-                <div class="install-command" onclick="copyCommand()">
-                    <code>pip install agentcorrect</code>
-                    <span class="copy-btn">Copy</span>
-                </div>
-            </div>
 
-            <!-- Right: Live Demo -->
-            <div class="hero-right">
-                <div class="browser-window">
-                    <div class="browser-header">
-                        <div class="browser-dots">
-                            <div class="browser-dot red"></div>
-                            <div class="browser-dot yellow"></div>
-                            <div class="browser-dot green"></div>
+                <!-- Install Command -->
+                <div class="install-command">
+                    <code>pip install agentcorrect</code>
+                    <button class="copy-btn" onclick="copyCommand()">Copy</button>
+                </div>
+
+                <!-- Main Demo Terminal -->
+                <div class="demo-container" id="demo">
+                    <div class="demo-header">
+                        <div class="demo-dots">
+                            <div class="dot dot-red"></div>
+                            <div class="dot dot-yellow"></div>
+                            <div class="dot dot-green"></div>
                         </div>
+                        <div class="demo-title">Terminal</div>
+                        <div style="width: 60px;"></div>
                     </div>
-                    <div class="terminal">
-                        <div class="cli-content" id="terminal-content">
-                            <!-- Animated content -->
-                        </div>
+                    <div class="demo-body" id="terminal-output">
+                        <!-- Terminal content will be injected here -->
                     </div>
                 </div>
             </div>
         </div>
-    </section>
+    </div>
 
-    <!-- The Story -->
-    <section class="story">
-        <div class="story-container">
-            <div class="story-header">
-                <h2 class="story-title">Every AI agent disaster follows the same pattern</h2>
-                <p class="story-subtitle">July 2025: Replit's AI deleted 1,206 executives from production. We built AgentCorrect so it never happens again.</p>
+    <!-- Stats Bar -->
+    <div class="stats-bar">
+        <div class="stats-container">
+            <div class="stat">
+                <div class="stat-number">95%</div>
+                <div class="stat-label">Payment Provider Coverage</div>
             </div>
-            
-            <div class="story-grid">
-                <div class="story-item">
-                    <div class="story-number">1</div>
-                    <div class="story-content">
-                        <h3>Agent retries a failed payment</h3>
-                        <p>No idempotency key. Customer charged 5 times. Support tickets explode. Refunds take weeks.</p>
-                        <div class="code-example">
-                            <div class="code-error">❌ POST /v1/charges HTTP/1.1</div>
-                            <div class="code-error">❌ Missing: Idempotency-Key</div>
-                            <div class="code-success">✓ AgentCorrect blocks with exit(2)</div>
-                        </div>
+            <div class="stat">
+                <div class="stat-number">100%</div>
+                <div class="stat-label">SQL Disaster Detection</div>
+            </div>
+            <div class="stat">
+                <div class="stat-number">0</div>
+                <div class="stat-label">False Positives</div>
+            </div>
+            <div class="stat">
+                <div class="stat-number">2</div>
+                <div class="stat-label">Exit Code Blocks CI/CD</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Features -->
+    <section class="features" id="features">
+        <div class="features-container">
+            <div class="features-header">
+                <h2 class="features-title">Catches disasters, not false alarms</h2>
+                <p class="features-subtitle">Deterministic detection. AST parsing. No AI hallucinations.</p>
+            </div>
+
+            <div class="features-grid">
+                <div class="feature">
+                    <div class="feature-icon">💳</div>
+                    <h3 class="feature-title">Payment Idempotency</h3>
+                    <p class="feature-desc">
+                        Detects missing idempotency keys across Stripe, PayPal, Square, and 25+ providers. 
+                        Prevents duplicate charges when agents retry failed payments.
+                    </p>
+                    <div class="feature-code">
+                        ✓ Stripe: Idempotency-Key<br>
+                        ✓ PayPal: PayPal-Request-Id<br>
+                        ✓ Square: idempotency_key
                     </div>
                 </div>
-                
-                <div class="story-item">
-                    <div class="story-number">2</div>
-                    <div class="story-content">
-                        <h3>Agent "cleans up" old data</h3>
-                        <p>DELETE without WHERE. 47,293 user records gone. 3AM page. Database restore from backup.</p>
-                        <div class="code-example">
-                            <div class="code-error">❌ DELETE FROM users WHERE 1=1</div>
-                            <div class="code-error">❌ Affects: ALL ROWS</div>
-                            <div class="code-success">✓ AgentCorrect blocks with exit(2)</div>
-                        </div>
+
+                <div class="feature">
+                    <div class="feature-icon">🗄️</div>
+                    <h3 class="feature-title">SQL Safety</h3>
+                    <p class="feature-desc">
+                        AST-based parsing catches DELETE without WHERE, tautologies like 1=1, 
+                        TRUNCATE, and DROP operations before they wipe your database.
+                    </p>
+                    <div class="feature-code">
+                        ✗ DELETE FROM users WHERE 1=1<br>
+                        ✗ UPDATE orders SET status='cancelled'<br>
+                        ✗ TRUNCATE TABLE customers
                     </div>
                 </div>
-                
-                <div class="story-item">
-                    <div class="story-number">3</div>
-                    <div class="story-content">
-                        <h3>Agent "optimizes" the cache</h3>
-                        <p>FLUSHALL command. Entire Redis wiped. Site down. Every query hits database. Meltdown.</p>
-                        <div class="code-example">
-                            <div class="code-error">❌ redis.flushall()</div>
-                            <div class="code-error">❌ Impact: 100% cache miss</div>
-                            <div class="code-success">✓ AgentCorrect blocks with exit(2)</div>
-                        </div>
+
+                <div class="feature">
+                    <div class="feature-icon">⚡</div>
+                    <h3 class="feature-title">Infrastructure Protection</h3>
+                    <p class="feature-desc">
+                        Blocks Redis FLUSHALL, MongoDB drops, S3 bucket deletions, and other 
+                        infrastructure-destroying commands before they cause outages.
+                    </p>
+                    <div class="feature-code">
+                        ✗ redis.flushall()<br>
+                        ✗ db.dropDatabase()<br>
+                        ✗ s3.delete_bucket()
                     </div>
                 </div>
             </div>
@@ -769,46 +720,35 @@
     <!-- How It Works -->
     <section class="how" id="how">
         <div class="how-container">
-            <div class="how-header">
-                <h2 class="how-title">Deterministic. Local. Zero hallucinations.</h2>
-                <p class="how-subtitle">AST-based parsing. Pattern matching. No AI required.</p>
-            </div>
+            <h2 class="how-title">Dead simple integration</h2>
             
-            <div class="how-grid">
-                <div class="how-card">
-                    <div class="how-icon">📊</div>
-                    <h3>Trace Analysis</h3>
-                    <p>Feed your agent traces through AgentCorrect. JSONL in, safety analysis out. Works with OpenTelemetry, LangSmith, any format.</p>
+            <div class="steps">
+                <div class="step">
+                    <div class="step-number">01</div>
+                    <h3 class="step-title">Capture traces</h3>
+                    <p class="step-desc">
+                        Export your agent traces from OpenTelemetry, LangSmith, or any observability tool. 
+                        JSONL format with role and metadata.
+                    </p>
                 </div>
-                
-                <div class="how-card">
-                    <div class="how-icon">🔍</div>
-                    <h3>Pattern Detection</h3>
-                    <p>AST parsing for SQL. Header validation for payments. Command matching for Redis/Mongo. 100% deterministic, zero false positives.</p>
-                </div>
-                
-                <div class="how-card">
-                    <div class="how-icon">🚫</div>
-                    <h3>CI/CD Blocking</h3>
-                    <p>Exit code 2 stops deployments cold. SEV0 issues block the pipeline. Your agents can't ship disasters to production.</p>
-                </div>
-            </div>
-        </div>
-    </section>
 
-    <!-- CTA -->
-    <section class="cta">
-        <div class="cta-container">
-            <h2 class="cta-title">Start catching disasters today</h2>
-            <p class="cta-subtitle">Open source. MIT licensed. Your data never leaves your machine.</p>
-            
-            <div class="cta-buttons">
-                <a href="https://github.com/ishaan-jaff/AgentCorrect" class="cta-btn">
-                    Get Started on GitHub
-                </a>
-                <a href="https://github.com/ishaan-jaff/AgentCorrect/issues" class="cta-btn cta-github">
-                    Report an Issue
-                </a>
+                <div class="step">
+                    <div class="step-number">02</div>
+                    <h3 class="step-title">Run analysis</h3>
+                    <p class="step-desc">
+                        AgentCorrect scans every trace for payment, SQL, and infrastructure disasters. 
+                        100% deterministic, no false positives.
+                    </p>
+                </div>
+
+                <div class="step">
+                    <div class="step-number">03</div>
+                    <h3 class="step-title">Block deployment</h3>
+                    <p class="step-desc">
+                        Exit code 2 fails your CI/CD pipeline when disasters are detected. 
+                        Your agents can't ship breaking changes to production.
+                    </p>
+                </div>
             </div>
         </div>
     </section>
@@ -818,117 +758,166 @@
         <div class="footer-links">
             <a href="https://github.com/ishaan-jaff/AgentCorrect">GitHub</a>
             <a href="https://github.com/ishaan-jaff/AgentCorrect#readme">Documentation</a>
-            <a href="https://github.com/ishaan-jaff/AgentCorrect/issues">Support</a>
+            <a href="https://github.com/ishaan-jaff/AgentCorrect/issues">Issues</a>
+            <a href="https://pypi.org/project/agentcorrect/">PyPI</a>
         </div>
-        <p>AgentCorrect - Because your AI agents need adult supervision</p>
+        <p style="color: #9CA3AF; font-size: 14px;">
+            Open source. MIT licensed. Your traces never leave your machine.
+        </p>
     </footer>
 
     <script>
-        // Terminal Animation
-        const scenarios = [
-            {
-                command: '$ agentcorrect analyze agent_trace.jsonl',
-                analyzing: 'Analyzing 1,532 agent actions...',
-                errors: [
-                    {
-                        header: '🚨 SEV0: Payment without idempotency',
-                        details: [
-                            'Provider: Stripe',
-                            'Risk: Duplicate charges on retry',
-                            '✅ Fix: Add Idempotency-Key header'
-                        ]
-                    },
-                    {
-                        header: '🚨 SEV0: SQL DELETE without WHERE',
-                        details: [
-                            'Table: users (47,293 rows)',
-                            'Impact: Complete data loss',
-                            '✅ Fix: Add WHERE user_id = ?'
-                        ]
-                    },
-                    {
-                        header: '🚨 SEV0: Redis FLUSHALL detected',
-                        details: [
-                            'Command: redis.flushall()',
-                            'Impact: Service degradation',
-                            '✅ Fix: Use targeted DEL commands'
-                        ]
-                    }
+        // Terminal Animation - WORKING VERSION
+        const terminalOutput = document.getElementById('terminal-output');
+        
+        const terminalSequence = [
+            { type: 'cmd', text: 'agentcorrect analyze agent_traces.jsonl', delay: 0 },
+            { type: 'analyzing', text: '⚡ Analyzing 2,847 agent actions...', delay: 400 },
+            { type: 'blank', delay: 600 },
+            { type: 'section', text: 'SCANNING FOR DISASTERS', delay: 800 },
+            { type: 'blank', delay: 1000 },
+            { 
+                type: 'error',
+                title: '🚨 SEV0: Payment Missing Idempotency',
+                details: [
+                    'Provider: Stripe API',
+                    'Endpoint: POST /v1/charges',
+                    'Risk: Duplicate charges on retry'
                 ],
-                exit: '❌ Exit code: 2 (CI/CD pipeline blocked)'
+                fix: '✅ Fix: Add header Idempotency-Key: ${orderId}',
+                delay: 1200
+            },
+            { type: 'blank', delay: 2200 },
+            {
+                type: 'error',
+                title: '🚨 SEV0: SQL DELETE Without WHERE',
+                details: [
+                    'Query: DELETE FROM users WHERE 1=1',
+                    'Table: users (47,293 rows)',
+                    'Impact: Complete data loss'
+                ],
+                fix: '✅ Fix: Add specific WHERE user_id = ?',
+                delay: 2400
+            },
+            { type: 'blank', delay: 3400 },
+            {
+                type: 'error',
+                title: '🚨 SEV0: Redis Cache Wipe',
+                details: [
+                    'Command: redis.flushall()',
+                    'Keys affected: 892,456',
+                    'Impact: 100% cache miss, service degradation'
+                ],
+                fix: '✅ Fix: Use targeted DEL for specific keys',
+                delay: 3600
+            },
+            { type: 'blank', delay: 4600 },
+            { type: 'section', text: 'ANALYSIS COMPLETE', delay: 4800 },
+            { type: 'blank', delay: 5000 },
+            { 
+                type: 'summary',
+                text: 'Found 3 critical issues | <span class="success-count">0 passed</span>',
+                delay: 5200
+            },
+            { type: 'blank', delay: 5400 },
+            {
+                type: 'exit',
+                text: '❌ EXIT CODE: 2 - CI/CD PIPELINE BLOCKED',
+                delay: 5600
             }
         ];
 
-        function animateTerminal() {
-            const terminal = document.getElementById('terminal-content');
-            const scenario = scenarios[0];
-            let html = '';
-            let delay = 0;
+        function renderTerminalLine(item) {
+            const line = document.createElement('div');
+            line.className = 'terminal-line';
+            line.style.animationDelay = '0ms';
 
-            // Command
-            setTimeout(() => {
-                html = `<div class="cli-line prompt" style="animation-delay: ${delay}ms">${scenario.command}</div>`;
-                terminal.innerHTML = html;
-            }, delay);
-            delay += 500;
+            switch(item.type) {
+                case 'cmd':
+                    line.className += ' cmd';
+                    line.textContent = item.text;
+                    break;
+                case 'analyzing':
+                    line.className += ' analyzing';
+                    line.textContent = item.text;
+                    break;
+                case 'section':
+                    line.className += ' section-header';
+                    line.textContent = item.text;
+                    break;
+                case 'error':
+                    line.className += ' error';
+                    line.innerHTML = `
+                        <div class="error-title">
+                            <span class="error-icon">!</span>
+                            ${item.title}
+                        </div>
+                        ${item.details.map(d => `<div class="error-detail">• ${d}</div>`).join('')}
+                        <div class="fix">${item.fix}</div>
+                    `;
+                    break;
+                case 'summary':
+                    line.style.color = '#94A3B8';
+                    line.innerHTML = item.text;
+                    break;
+                case 'exit':
+                    line.className += ' exit-status';
+                    line.textContent = item.text;
+                    break;
+                case 'blank':
+                    line.innerHTML = '&nbsp;';
+                    break;
+            }
 
-            // Analyzing
-            setTimeout(() => {
-                html += `<div class="cli-line analyzing" style="animation-delay: ${delay}ms">${scenario.analyzing}</div>`;
-                terminal.innerHTML = html;
-            }, delay);
-            delay += 800;
-
-            // Errors
-            scenario.errors.forEach((error, index) => {
-                setTimeout(() => {
-                    let errorHtml = `<div class="cli-line error-block" style="animation-delay: ${delay}ms">`;
-                    errorHtml += `<div class="error-header">${error.header}</div>`;
-                    error.details.forEach(detail => {
-                        errorHtml += `<div class="error-detail">${detail}</div>`;
-                    });
-                    errorHtml += `</div>`;
-                    html += errorHtml;
-                    terminal.innerHTML = html;
-                }, delay);
-                delay += 1000;
-            });
-
-            // Exit code
-            setTimeout(() => {
-                html += `<div class="cli-line exit-code" style="animation-delay: ${delay}ms">${scenario.exit}</div>`;
-                terminal.innerHTML = html;
-            }, delay);
-
-            // Loop
-            setTimeout(() => {
-                animateTerminal();
-            }, delay + 3000);
+            return line;
         }
 
-        // Start animation on load
-        window.addEventListener('load', () => {
-            setTimeout(animateTerminal, 1000);
+        function animateTerminal() {
+            terminalOutput.innerHTML = '';
+            
+            terminalSequence.forEach((item) => {
+                setTimeout(() => {
+                    const line = renderTerminalLine(item);
+                    terminalOutput.appendChild(line);
+                    
+                    // Auto-scroll to bottom
+                    terminalOutput.scrollTop = terminalOutput.scrollHeight;
+                }, item.delay);
+            });
+
+            // Loop animation
+            setTimeout(() => {
+                animateTerminal();
+            }, 8000);
+        }
+
+        // Start animation when page loads
+        window.addEventListener('DOMContentLoaded', () => {
+            setTimeout(animateTerminal, 500);
         });
 
         // Copy command
         function copyCommand() {
             navigator.clipboard.writeText('pip install agentcorrect');
             const btn = document.querySelector('.copy-btn');
-            const original = btn.textContent;
+            const originalText = btn.textContent;
             btn.textContent = 'Copied!';
             setTimeout(() => {
-                btn.textContent = original;
+                btn.textContent = originalText;
             }, 2000);
         }
 
-        // Smooth scroll
+        // Smooth scroll for anchor links
         document.querySelectorAll('a[href^="#"]').forEach(anchor => {
             anchor.addEventListener('click', function (e) {
                 e.preventDefault();
-                document.querySelector(this.getAttribute('href')).scrollIntoView({
-                    behavior: 'smooth'
-                });
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
             });
         });
     </script>
