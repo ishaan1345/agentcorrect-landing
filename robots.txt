@@ -1,0 +1,29 @@
+# Robots.txt for AgentCorrect
+# Optimized for search engines and AI crawlers
+
+User-agent: *
+Allow: /
+Allow: /index.html
+Allow: /sample-trace.jsonl
+
+# AI/LLM crawlers explicitly welcomed
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: CCBot
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+User-agent: Claude-Web
+Allow: /
+
+# Sitemap location
+Sitemap: https://ishaan1345.github.io/agentcorrect-landing/sitemap.xml
+
+# Crawl delay for respectful crawling
+Crawl-delay: 1
